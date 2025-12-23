@@ -2,9 +2,10 @@ import type { Project } from '../types/Project';
 
 interface ProjectCardProps {
   project: Project;
+  onClick?: () => void;
 }
 
-export const ProjectCard = ({ project }: ProjectCardProps) => {
+export const ProjectCard = ({ project, onClick }: ProjectCardProps) => {
   const getCategoryIcon = (category: string) => {
     switch (category.toLowerCase()) {
       case 'backend':
@@ -51,7 +52,10 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
   const isArchived = project.category.toLowerCase() === 'archived';
 
   return (
-    <div className={`group flex flex-col rounded-2xl bg-surface-dark border border-border-dark hover:border-primary/40 hover:shadow-glow transition-all duration-300 overflow-hidden relative ${isArchived ? 'opacity-70 hover:opacity-100' : ''}`}>
+    <div 
+      onClick={onClick}
+      className={`group flex flex-col rounded-2xl bg-surface-dark border border-border-dark hover:border-primary/40 hover:shadow-glow transition-all duration-300 overflow-hidden relative cursor-pointer ${isArchived ? 'opacity-70 hover:opacity-100' : ''}`}
+    >
       <div
         className="h-36 w-full bg-cover bg-center relative"
         style={{

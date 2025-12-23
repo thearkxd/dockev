@@ -1,6 +1,7 @@
-import { app, BrowserWindow, ipcMain, Menu } from "electron";
+import { app, BrowserWindow, ipcMain, Menu, dialog } from "electron";
 import { fileURLToPath } from "url";
 import path from "path";
+import { spawn } from "child_process";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -49,6 +50,71 @@ ipcMain.handle("window:maximize", () => {
 ipcMain.handle("window:close", () => {
   mainWindow?.close();
 });
+
+ipcMain.handle("dialog:selectFolder", async () => {
+  if (!mainWindow) return null;
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ["openDirectory"],
+    title: "Select Project Folder",
+  });
+  if (result.canceled) return null;
+  return result.filePaths[0] || null;
+});
+
+ipcMain.handle(
+  "launch:ide",
+  async (
+    _event: Electron.IpcMainInvokeEvent,
+    projectPath: string,
+    ide: string
+  ) => {
+    return new Promise((resolve, reject) => {
+      let command: string;
+      const args: string[] = [projectPath];
+
+      switch (ide) {
+        case "vscode":
+          command = "code";
+          break;
+        case "cursor":
+          command = "cursor";
+          break;
+        case "webstorm":
+          command = "webstorm";
+          break;
+        case "terminal":
+          if (process.platform === "win32") {
+            command = "cmd";
+            args.unshift("/c", "start", "cmd", "/k", "cd", "/d");
+          } else if (process.platform === "darwin") {
+            command = "open";
+            args[0] = "-a";
+            args[1] = "Terminal";
+            args[2] = projectPath;
+          } else {
+            command = "gnome-terminal";
+            args.unshift("--working-directory");
+          }
+          break;
+        default:
+          reject(new Error(`Unsupported IDE: ${ide}`));
+          return;
+      }
+
+      const child = spawn(command, args, {
+        detached: true,
+        stdio: "ignore",
+      });
+
+      child.on("error", (error) => {
+        reject(error);
+      });
+
+      child.unref();
+      resolve(true);
+    });
+  }
+);
 
 app.whenReady().then(() => {
   createWindow();

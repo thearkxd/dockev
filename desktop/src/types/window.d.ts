@@ -6,6 +6,12 @@ declare global {
       minimize: () => void;
       maximize: () => void;
       close: () => void;
+      launch?: {
+        ide: (projectPath: string, ide: string) => Promise<boolean>;
+      };
+    };
+    dockevDialog: {
+      selectFolder: () => Promise<string | null>;
     };
   }
 }

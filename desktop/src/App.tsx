@@ -1,11 +1,12 @@
-import { Sidebar } from "./components/Sidebar";
-import { Header } from "./components/Header";
-import { ProjectCard } from "./components/ProjectCard";
+import { useState } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ProjectsPage } from "./pages/ProjectsPage";
+import { ProjectDetailPage } from "./pages/ProjectDetailPage";
+import { PageTransition } from "./components/PageTransition";
 import type { Project } from "./types/Project";
-import { TitleBar } from "./components/TitleBar";
 
 // Mock data - later will be replaced with actual state management
-const mockProjects: Project[] = [
+const initialProjects: Project[] = [
   {
     id: "1",
     name: "E-commerce API",
@@ -54,37 +55,77 @@ const mockProjects: Project[] = [
 ];
 
 export default function App() {
+  const [projects, setProjects] = useState<Project[]>(initialProjects);
+
+  const handleAddProject = (projectData: {
+    name: string;
+    path: string;
+    category: string;
+    defaultIde: string;
+    tags: string[];
+  }) => {
+    const newProject: Project = {
+      id: Date.now().toString(),
+      name: projectData.name,
+      path: projectData.path,
+      category: projectData.category,
+      tags: projectData.tags,
+      defaultIde: projectData.defaultIde as "vscode" | "cursor" | "webstorm",
+      lastOpenedAt: undefined,
+    };
+    setProjects([...projects, newProject]);
+  };
+
+  const handleUpdateProject = (id: string, updates: Partial<Project>) => {
+    setProjects(projects.map((p) => (p.id === id ? { ...p, ...updates } : p)));
+  };
+
+  const handleDeleteProject = (id: string) => {
+    setProjects(projects.filter((p) => p.id !== id));
+  };
+
+  const handleOpenIDE = async (projectPath: string, ide: string) => {
+    try {
+      if (window.dockevWindow?.launch?.ide) {
+        await window.dockevWindow.launch.ide(projectPath, ide);
+      }
+    } catch (error) {
+      console.error("Error launching IDE:", error);
+      alert(
+        `Failed to launch ${ide}. Make sure it's installed and available in PATH.`
+      );
+    }
+  };
+
   return (
-    <div className="bg-background-dark text-text-primary font-display antialiased overflow-hidden selection:bg-primary/20 selection:text-primary">
-      <TitleBar />
-      <div className="relative flex h-screen w-full flex-row overflow-hidden">
-        <Sidebar />
-        <div className="flex flex-1 flex-col h-full min-w-0 bg-background-dark relative">
-          <Header />
-          <div className="flex-1 overflow-y-auto p-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 max-w-[1600px] mx-auto pb-20">
-              {mockProjects.map((project) => (
-                <ProjectCard key={project.id} project={project} />
-              ))}
-              <button className="flex flex-col items-center justify-center rounded-2xl bg-surface-dark border border-dashed border-border-dark p-6 gap-3 hover:border-primary/50 hover:bg-surface-dark/80 transition-all cursor-pointer group min-h-[300px]">
-                <div className="size-14 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 group-hover:bg-primary/20 transition-all duration-300">
-                  <span className="material-symbols-outlined text-text-secondary group-hover:text-primary transition-colors text-[28px]">
-                    add
-                  </span>
-                </div>
-                <div className="text-center">
-                  <h3 className="text-white text-[15px] font-semibold">
-                    New Project
-                  </h3>
-                  <p className="text-text-secondary text-xs mt-1">
-                    Initialize a new repository
-                  </p>
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
+    <BrowserRouter>
+      <div className="bg-background-dark text-text-primary font-display antialiased overflow-hidden selection:bg-primary/20 selection:text-primary">
+        <PageTransition>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <ProjectsPage
+                  projects={projects}
+                  onAddProject={handleAddProject}
+                />
+              }
+            />
+            <Route
+              path="/project/:id"
+              element={
+                <ProjectDetailPage
+                  projects={projects}
+                  onUpdateProject={handleUpdateProject}
+                  onDeleteProject={handleDeleteProject}
+                  onOpenIDE={handleOpenIDE}
+                />
+              }
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </PageTransition>
       </div>
-    </div>
+    </BrowserRouter>
   );
 }
