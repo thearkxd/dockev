@@ -16,26 +16,46 @@ interface ProjectsPageProps {
     defaultIde: string;
     tags: string[];
   }) => void;
+  onUpdateProject?: (id: string, updates: Partial<Project>) => void;
+  onDeleteProject?: (id: string) => void;
+  onOpenIDE?: (projectPath: string, ide: string) => Promise<void>;
 }
 
 export function ProjectsPage({ projects, onAddProject }: ProjectsPageProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string>("all");
   const navigate = useNavigate();
 
   const handleProjectClick = (project: Project) => {
     navigate(`/project/${project.id}`);
   };
 
+  const handleCategoryChange = (category: string) => {
+    setActiveCategory(category);
+  };
+
+  const filteredProjects = projects.filter((project) => {
+    if (activeCategory === "all") return true;
+    if (activeCategory === "Archived") {
+      return project.category.toLowerCase() === "archived";
+    }
+    return project.category === activeCategory;
+  });
+
   return (
     <>
       <TitleBar showSearch={true} showActions={true} />
       <div className="relative flex h-screen w-full flex-row overflow-hidden pt-[49px]">
-        <Sidebar onNewProjectClick={() => setIsModalOpen(true)} />
+        <Sidebar
+          onNewProjectClick={() => setIsModalOpen(true)}
+          activeCategory={activeCategory}
+          onCategoryChange={handleCategoryChange}
+        />
         <div className="flex flex-1 flex-col h-full min-w-0 bg-background-dark relative">
           <Header />
           <div className="flex-1 overflow-y-auto p-8">
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 max-w-[1600px] mx-auto pb-20">
-              {projects.map((project) => (
+              {filteredProjects.map((project) => (
                 <ProjectCard
                   key={project.id}
                   project={project}

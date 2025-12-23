@@ -1,12 +1,23 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface SidebarProps {
   onNewProjectClick?: () => void;
+  activeCategory?: string;
+  onCategoryChange?: (category: string) => void;
 }
 
-export const Sidebar = ({ onNewProjectClick }: SidebarProps) => {
-  const [activeNav, setActiveNav] = useState("all");
+export const Sidebar = ({
+  onNewProjectClick,
+  activeCategory = "all",
+  onCategoryChange,
+}: SidebarProps) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const navigate = useNavigate();
+
+  const handleCategoryClick = (category: string) => {
+    onCategoryChange?.(category);
+  };
 
   return (
     <aside
@@ -59,9 +70,9 @@ export const Sidebar = ({ onNewProjectClick }: SidebarProps) => {
             </p>
           )}
           <button
-            onClick={() => setActiveNav("all")}
+            onClick={() => handleCategoryClick("all")}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group relative ${
-              activeNav === "all"
+              activeCategory === "all"
                 ? "bg-primary/10 text-primary border border-primary/10 shadow-glow"
                 : "text-text-secondary hover:bg-white/5 hover:text-white"
             } ${isCollapsed ? "justify-center w-full" : ""}`}
@@ -89,9 +100,9 @@ export const Sidebar = ({ onNewProjectClick }: SidebarProps) => {
             )}
           </button>
           <button
-            onClick={() => setActiveNav("mobile")}
+            onClick={() => handleCategoryClick("Mobile")}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group relative ${
-              activeNav === "mobile"
+              activeCategory === "Mobile"
                 ? "bg-primary/10 text-primary border border-primary/10 shadow-glow"
                 : "text-text-secondary hover:bg-white/5 hover:text-white"
             } ${isCollapsed ? "justify-center w-full" : ""}`}
@@ -112,9 +123,9 @@ export const Sidebar = ({ onNewProjectClick }: SidebarProps) => {
             )}
           </button>
           <button
-            onClick={() => setActiveNav("web")}
+            onClick={() => handleCategoryClick("Web")}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group relative ${
-              activeNav === "web"
+              activeCategory === "Web"
                 ? "bg-primary/10 text-primary border border-primary/10 shadow-glow"
                 : "text-text-secondary hover:bg-white/5 hover:text-white"
             } ${isCollapsed ? "justify-center w-full" : ""}`}
@@ -135,9 +146,9 @@ export const Sidebar = ({ onNewProjectClick }: SidebarProps) => {
             )}
           </button>
           <button
-            onClick={() => setActiveNav("backend")}
+            onClick={() => handleCategoryClick("Backend")}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group relative ${
-              activeNav === "backend"
+              activeCategory === "Backend"
                 ? "bg-primary/10 text-primary border border-primary/10 shadow-glow"
                 : "text-text-secondary hover:bg-white/5 hover:text-white"
             } ${isCollapsed ? "justify-center w-full" : ""}`}
@@ -158,9 +169,9 @@ export const Sidebar = ({ onNewProjectClick }: SidebarProps) => {
             )}
           </button>
           <button
-            onClick={() => setActiveNav("experiments")}
+            onClick={() => handleCategoryClick("Experiments")}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group relative ${
-              activeNav === "experiments"
+              activeCategory === "Experiments"
                 ? "bg-primary/10 text-primary border border-primary/10 shadow-glow"
                 : "text-text-secondary hover:bg-white/5 hover:text-white"
             } ${isCollapsed ? "justify-center w-full" : ""}`}
@@ -186,9 +197,9 @@ export const Sidebar = ({ onNewProjectClick }: SidebarProps) => {
             <div className="h-px bg-border-dark/50 my-2 mx-2"></div>
           )}
           <button
-            onClick={() => setActiveNav("archived")}
+            onClick={() => handleCategoryClick("Archived")}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group relative ${
-              activeNav === "archived"
+              activeCategory === "Archived"
                 ? "bg-primary/10 text-primary border border-primary/10 shadow-glow"
                 : "text-text-secondary hover:bg-white/5 hover:text-white"
             } ${isCollapsed ? "justify-center w-full" : ""}`}
@@ -252,7 +263,11 @@ export const Sidebar = ({ onNewProjectClick }: SidebarProps) => {
                   Pro Plan
                 </p>
               </div>
-              <button className="text-text-secondary hover:text-white transition-colors">
+              <button
+                onClick={() => navigate("/settings")}
+                className="text-text-secondary hover:text-white transition-colors"
+                title="Settings"
+              >
                 <span className="material-symbols-outlined text-[18px]">
                   settings
                 </span>

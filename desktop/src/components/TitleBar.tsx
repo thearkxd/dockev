@@ -1,3 +1,5 @@
+import { useNavigate } from "react-router-dom";
+
 interface TitleBarProps {
   breadcrumb?: {
     label: string;
@@ -14,6 +16,7 @@ export function TitleBar({
   showSearch = false,
   showActions = false,
 }: TitleBarProps) {
+  const navigate = useNavigate();
   return (
     <header className="flex items-center justify-between border-b border-border-dark/50 bg-background-dark/80 backdrop-blur-md px-6 py-3 fixed top-0 left-0 right-0 z-50 select-none drag-region">
       <div className="flex items-center gap-6">
@@ -70,7 +73,11 @@ export function TitleBar({
                 notifications
               </span>
             </button>
-            <button className="flex items-center justify-center rounded-md size-8 hover:bg-surface-dark text-text-secondary hover:text-white transition-colors">
+            <button
+              onClick={() => navigate("/settings")}
+              className="flex items-center justify-center rounded-md size-8 hover:bg-surface-dark text-text-secondary hover:text-white transition-colors"
+              title="Settings"
+            >
               <span className="material-symbols-outlined text-[20px]">
                 settings
               </span>

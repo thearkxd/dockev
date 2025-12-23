@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ProjectDetail } from "../components/ProjectDetail";
 import { TitleBar } from "../components/TitleBar";
+import { ProjectConfigModal } from "../components/ProjectConfigModal";
 import type { Project } from "../types/Project";
 
 interface ProjectDetailPageProps {
@@ -18,6 +20,7 @@ export function ProjectDetailPage({
 }: ProjectDetailPageProps) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
 
   const project = projects.find((p) => p.id === id);
 
@@ -42,8 +45,8 @@ export function ProjectDetailPage({
     );
   }
 
-  const handleOpenIDE = async (ide: string) => {
-    await onOpenIDE(project.path, ide);
+  const handleOpenIDE = async (projectPath: string, ide: string) => {
+    await onOpenIDE(projectPath, ide);
     // Update last opened time
     onUpdateProject(project.id, { lastOpenedAt: Date.now() });
   };
@@ -53,6 +56,39 @@ export function ProjectDetailPage({
       onDeleteProject(project.id);
       navigate("/");
     }
+  };
+
+  const handleRunDevServer = async (projectPath: string) => {
+    try {
+      if (window.dockevWindow?.run?.devServer) {
+        await window.dockevWindow.run.devServer(
+          projectPath,
+          project.config?.devServerCommand,
+          project.config?.environmentVariables
+        );
+      }
+    } catch (error) {
+      console.error("Error running dev server:", error);
+      throw error;
+    }
+  };
+
+  const handleOpenConfig = () => {
+    setIsConfigModalOpen(true);
+  };
+
+  const handleSaveConfig = (updates: Partial<Project>) => {
+    onUpdateProject(project.id, updates);
+  };
+
+  const handleManageTechStack = () => {
+    // TODO: Open tech stack management modal
+    alert("Tech stack management will be available soon!");
+  };
+
+  const handleViewAllChanges = () => {
+    // TODO: Show git changes in a modal or new view
+    alert("Viewing all git changes will be available soon!");
   };
 
   return (
@@ -71,8 +107,19 @@ export function ProjectDetailPage({
           project={project}
           onOpenIDE={handleOpenIDE}
           onDelete={handleDelete}
+          onRunDevServer={handleRunDevServer}
+          onOpenConfig={handleOpenConfig}
+          onManageTechStack={handleManageTechStack}
+          onViewAllChanges={handleViewAllChanges}
+          onUpdateProject={(updates) => onUpdateProject(project.id, updates)}
         />
       </div>
+      <ProjectConfigModal
+        isOpen={isConfigModalOpen}
+        project={project}
+        onClose={() => setIsConfigModalOpen(false)}
+        onSave={handleSaveConfig}
+      />
     </>
   );
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { settingsStorage } from "../utils/settingsStorage";
 
 interface AddProjectModalProps {
   isOpen: boolean;
@@ -20,7 +21,10 @@ export function AddProjectModal({
   const [name, setName] = useState("");
   const [path, setPath] = useState("");
   const [category, setCategory] = useState("");
-  const [defaultIde, setDefaultIde] = useState("vscode");
+  const [defaultIde, setDefaultIde] = useState(
+    settingsStorage.getSettings().defaultIde || "vscode"
+  );
+  const [availableIDEs] = useState(() => settingsStorage.getAllIDEs());
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [errors, setErrors] = useState<{ name?: string; path?: string }>({});
@@ -262,9 +266,15 @@ export function AddProjectModal({
                       onChange={(e) => setDefaultIde(e.target.value)}
                       className="w-full appearance-none rounded-lg border border-border-dark bg-white/5 px-4 py-3 pr-10 text-sm text-white transition-all focus:border-primary focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-primary/20"
                     >
-                      <option value="vscode" className="text-white bg-border-dark">VS Code</option>
-                      <option value="cursor" className="text-white bg-border-dark">Cursor</option>
-                      <option value="webstorm" className="text-white bg-border-dark">WebStorm</option>
+                      {availableIDEs.map((ide) => (
+                        <option
+                          key={ide.id}
+                          value={ide.id}
+                          className="text-white bg-border-dark"
+                        >
+                          {ide.name}
+                        </option>
+                      ))}
                       <option value="terminal" className="text-white bg-border-dark">Terminal</option>
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-text-secondary">

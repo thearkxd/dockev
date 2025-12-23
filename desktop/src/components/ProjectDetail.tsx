@@ -1,18 +1,65 @@
 import { useState, useEffect } from "react";
 import type { Project } from "../types/Project";
+import type { Module } from "../types/Module";
 
 interface ProjectDetailProps {
   project: Project;
-  onOpenIDE: (ide: string) => void;
+  onOpenIDE: (projectPath: string, ide: string) => Promise<void>;
   onDelete: () => void;
+  onRunDevServer?: (projectPath: string) => Promise<void>;
+  onOpenConfig?: () => void;
+  onManageTechStack?: () => void;
+  onViewAllChanges?: () => void;
+  onUpdateProject?: (updates: Partial<Project>) => void;
 }
 
 export function ProjectDetail({
   project,
   onOpenIDE,
   onDelete,
+  onRunDevServer,
+  onOpenConfig,
+  onManageTechStack,
+  onViewAllChanges,
+  onUpdateProject,
 }: ProjectDetailProps) {
   const [currentTime, setCurrentTime] = useState(() => Date.now());
+  const [gitStatus, setGitStatus] = useState<{
+    branch: string;
+    lastCommit: string;
+    lastCommitTime: string;
+    pendingChanges: number;
+    files: Array<{ name: string; status: string }>;
+  } | null>(null);
+  const [isLoadingGit, setIsLoadingGit] = useState(true);
+  const [modules, setModules] = useState<Module[]>(project.modules || []);
+  const [isDetectingModules, setIsDetectingModules] = useState(false);
+  const [detectedModules, setDetectedModules] = useState<
+    Array<{
+      name: string;
+      path: string;
+      techStack: string[];
+      confidence: number;
+    }>
+  >([]);
+  const [projectDetails, setProjectDetails] = useState<{
+    name?: string;
+    description?: string;
+    version?: string;
+    author?: string;
+    license?: string;
+    repository?: string;
+    homepage?: string;
+    readme?: string;
+  } | null>(null);
+  const [projectStats, setProjectStats] = useState<{
+    size: number;
+    fileCount: number;
+    folderCount: number;
+    created: number;
+    modified: number;
+    language?: string;
+  } | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -20,6 +67,138 @@ export function ProjectDetail({
     }, 60000); // Update every minute
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const loadGitStatus = async () => {
+      setIsLoadingGit(true);
+      try {
+        if (window.dockevWindow?.git?.getStatus) {
+          const status = await window.dockevWindow.git.getStatus(project.path);
+          setGitStatus(status);
+        }
+      } catch (error) {
+        console.error("Error loading git status:", error);
+        setGitStatus(null);
+      } finally {
+        setIsLoadingGit(false);
+      }
+    };
+
+    loadGitStatus();
+    // Refresh git status every 30 seconds
+    const interval = setInterval(loadGitStatus, 30000);
+    return () => clearInterval(interval);
+  }, [project.path]);
+
+  useEffect(() => {
+    const loadProjectDetails = async () => {
+      try {
+        if (window.dockevProject?.getDetails) {
+          console.log("Loading project details for:", project.path);
+          const details = await window.dockevProject.getDetails(project.path);
+          console.log("Project details loaded:", details);
+          setProjectDetails(details);
+        } else {
+          console.warn("window.dockevProject.getDetails is not available");
+        }
+      } catch (error) {
+        console.error("Error loading project details:", error);
+        setProjectDetails(null);
+      }
+    };
+
+    loadProjectDetails();
+  }, [project.path]);
+
+  useEffect(() => {
+    const loadProjectStats = async () => {
+      try {
+        if (window.dockevProject?.getStats) {
+          const stats = await window.dockevProject.getStats(project.path);
+          setProjectStats(stats);
+        }
+      } catch (error) {
+        console.error("Error loading project stats:", error);
+        setProjectStats(null);
+      }
+    };
+
+    loadProjectStats();
+  }, [project.path]);
+
+  const detectModules = async () => {
+    setIsDetectingModules(true);
+    try {
+      if (window.dockevDetect?.modules) {
+        const detected = await window.dockevDetect.modules(project.path);
+        // Filter out modules that are already added
+        const existingModulePaths = new Set(
+          modules.map((m) => m.path.toLowerCase())
+        );
+        const filteredDetected = detected.filter(
+          (d) => !existingModulePaths.has(d.path.toLowerCase())
+        );
+        setDetectedModules(filteredDetected);
+      }
+    } catch (error) {
+      console.error("Error detecting modules:", error);
+    } finally {
+      setIsDetectingModules(false);
+    }
+  };
+
+  const handleAddModule = (detectedModule: {
+    name: string;
+    path: string;
+    techStack: string[];
+  }) => {
+    const newModule: Module = {
+      id: Date.now().toString(),
+      name: detectedModule.name,
+      path: detectedModule.path,
+      techStack: detectedModule.techStack,
+      defaultIde: project.defaultIde,
+    };
+    const updatedModules = [...modules, newModule];
+    setModules(updatedModules);
+    // Remove from detected modules list using path comparison
+    setDetectedModules(
+      detectedModules.filter(
+        (m) => m.path.toLowerCase() !== detectedModule.path.toLowerCase()
+      )
+    );
+    // Update project with new modules
+    if (onUpdateProject) {
+      onUpdateProject({ modules: updatedModules });
+    }
+  };
+
+  const handleRemoveModule = (moduleId: string) => {
+    const updatedModules = modules.filter((m) => m.id !== moduleId);
+    setModules(updatedModules);
+    // Update project
+    if (onUpdateProject) {
+      onUpdateProject({ modules: updatedModules });
+    }
+  };
+
+  const handleOpenModuleIDE = async (module: Module, ide: string) => {
+    // Construct full path - if relative, join with project path
+    let modulePath = module.path;
+    if (
+      module.path.startsWith(".") ||
+      (!module.path.includes(":") && navigator.platform.includes("Win"))
+    ) {
+      // Relative path - join with project path
+      // Simple path joining (avoiding Node.js path module in renderer)
+      const separator = project.path.includes("\\") ? "\\" : "/";
+      const cleanModulePath = module.path
+        .replace(/^\.\//, "")
+        .replace(/^\./, "");
+      modulePath = `${project.path}${separator}${cleanModulePath}`;
+    }
+    await onOpenIDE(modulePath, ide);
+  };
 
   const formatTimeAgo = (timestamp?: number) => {
     if (!timestamp) return "Never";
@@ -33,33 +212,112 @@ export function ProjectDetail({
     return `${days}d ago`;
   };
 
-  const copyPath = () => {
-    navigator.clipboard.writeText(project.path);
+  const formatBytes = (bytes: number): string => {
+    if (bytes === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB", "TB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
   };
 
-  // Mock tech stack data - later can be detected from project files
-  const techStack = [
-    { name: "React", version: "v18.2", icon: "code_blocks", color: "#61DAFB" },
-    { name: "Tailwind CSS", version: "v3.4", icon: "brush", color: "#38B2AC" },
-    {
-      name: "TypeScript",
-      version: "v5.3",
-      icon: "data_object",
-      color: "#3178C6",
-    },
-    { name: "Node.js", version: "v20.1", icon: "dns", color: "#8CC84B" },
-  ];
+  const copyPath = () => {
+    navigator.clipboard.writeText(project.path);
+    // Show toast notification (can be enhanced later)
+  };
 
-  // Mock git status
-  const gitStatus = {
-    branch: "feature/user-auth-flow",
-    lastCommit: "2 hours ago",
-    pendingChanges: 3,
-    files: [
-      { name: "src/components/AuthModal.tsx", status: "modified" },
-      { name: "src/utils/api.ts", status: "modified" },
-      { name: "src/types/user.d.ts", status: "added" },
-    ],
+  const handleRunDevServer = async () => {
+    if (onRunDevServer) {
+      try {
+        await onRunDevServer(project.path);
+      } catch (error) {
+        console.error("Error running dev server:", error);
+        alert(
+          "Failed to start dev server. Make sure you have npm/yarn installed."
+        );
+      }
+    }
+  };
+
+  const handleConfig = () => {
+    onOpenConfig?.();
+  };
+
+  const handleManageTechStack = () => {
+    onManageTechStack?.();
+  };
+
+  const handleViewAllChanges = () => {
+    onViewAllChanges?.();
+  };
+
+  // Get tech stack from modules
+  const getTechStackFromModules = () => {
+    const techMap = new Map<
+      string,
+      { name: string; icon: string; color: string }
+    >();
+
+    // Tech name to icon/color mapping
+    const techConfig: Record<string, { icon: string; color: string }> = {
+      React: { icon: "code_blocks", color: "#61DAFB" },
+      "React Native / Expo": { icon: "smartphone", color: "#61DAFB" },
+      "Tailwind CSS": { icon: "brush", color: "#38B2AC" },
+      TypeScript: { icon: "data_object", color: "#3178C6" },
+      "Node.js": { icon: "dns", color: "#8CC84B" },
+      "Next.js": { icon: "web", color: "#000000" },
+      Vue: { icon: "code", color: "#4FC08D" },
+      Angular: { icon: "code", color: "#DD0031" },
+      Python: { icon: "code", color: "#3776AB" },
+      Django: { icon: "code", color: "#092E20" },
+      Flask: { icon: "code", color: "#000000" },
+      Go: { icon: "code", color: "#00ADD8" },
+      Rust: { icon: "code", color: "#000000" },
+    };
+
+    // Collect all unique tech stacks from modules
+    modules.forEach((module) => {
+      module.techStack.forEach((tech) => {
+        if (!techMap.has(tech)) {
+          const config = techConfig[tech] || {
+            icon: "code",
+            color: "#6366F1",
+          };
+          techMap.set(tech, {
+            name: tech,
+            ...config,
+          });
+        }
+      });
+    });
+
+    // Also include project-level tags if no modules
+    if (modules.length === 0 && project.tags.length > 0) {
+      project.tags.forEach((tag) => {
+        if (!techMap.has(tag)) {
+          const config = techConfig[tag] || {
+            icon: "code",
+            color: "#6366F1",
+          };
+          techMap.set(tag, {
+            name: tag,
+            ...config,
+          });
+        }
+      });
+    }
+
+    return Array.from(techMap.values());
+  };
+
+  const techStack = getTechStackFromModules();
+
+  // Default git status if not available
+  const displayGitStatus = gitStatus || {
+    branch: "main",
+    lastCommit: "No commits yet",
+    lastCommitTime: "",
+    pendingChanges: 0,
+    files: [],
   };
 
   return (
@@ -77,15 +335,42 @@ export function ProjectDetail({
                 </span>
               </div>
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white">
-                {project.name}
+                {projectDetails?.name || project.name}
               </h1>
-              <div className="flex items-center gap-4 text-text-secondary text-sm">
+              {projectDetails?.description && (
+                <p className="text-text-secondary text-sm max-w-2xl">
+                  {projectDetails.description}
+                </p>
+              )}
+              <div className="flex items-center gap-4 text-text-secondary text-sm flex-wrap">
                 <div className="flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-[16px]">
                     folder
                   </span>
                   <span className="font-mono text-xs">{project.path}</span>
                 </div>
+                {projectDetails?.version && (
+                  <>
+                    <span className="w-1 h-1 rounded-full bg-gray-600"></span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-[16px]">
+                        label
+                      </span>
+                      <span>v{projectDetails.version}</span>
+                    </div>
+                  </>
+                )}
+                {projectDetails?.author && (
+                  <>
+                    <span className="w-1 h-1 rounded-full bg-gray-600"></span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-[16px]">
+                        person
+                      </span>
+                      <span>{projectDetails.author}</span>
+                    </div>
+                  </>
+                )}
                 <span className="w-1 h-1 rounded-full bg-gray-600"></span>
                 <div className="flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-[16px]">
@@ -96,13 +381,38 @@ export function ProjectDetail({
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button className="flex items-center gap-2 px-4 h-10 rounded-md border border-border-dark bg-surface-dark text-white text-sm font-medium hover:bg-surface-dark/80 transition-colors">
+              <button
+                onClick={async () => {
+                  try {
+                    if (window.dockevShell?.openFolder) {
+                      await window.dockevShell.openFolder(project.path);
+                    }
+                  } catch (error) {
+                    console.error("Error opening folder:", error);
+                    alert("Failed to open folder in file explorer.");
+                  }
+                }}
+                className="flex items-center gap-2 px-4 h-10 rounded-md border border-border-dark bg-surface-dark text-white text-sm font-medium hover:bg-surface-dark/80 transition-colors"
+                title="Open Folder"
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  folder_open
+                </span>
+                <span>Open Folder</span>
+              </button>
+              <button
+                onClick={handleConfig}
+                className="flex items-center gap-2 px-4 h-10 rounded-md border border-border-dark bg-surface-dark text-white text-sm font-medium hover:bg-surface-dark/80 transition-colors"
+              >
                 <span className="material-symbols-outlined text-[18px]">
                   tune
                 </span>
                 <span>Config</span>
               </button>
-              <button className="flex items-center gap-2 px-5 h-10 rounded-md bg-primary hover:bg-primary-hover text-white text-sm font-semibold shadow-glow transition-all active:scale-95">
+              <button
+                onClick={handleRunDevServer}
+                className="flex items-center gap-2 px-5 h-10 rounded-md bg-primary hover:bg-primary-hover text-white text-sm font-semibold shadow-glow transition-all active:scale-95"
+              >
                 <span className="material-symbols-outlined text-[18px]">
                   play_arrow
                 </span>
@@ -116,11 +426,31 @@ export function ProjectDetail({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Left Column */}
             <div className="lg:col-span-8 flex flex-col gap-8">
+              {/* Project Description / README */}
+              {projectDetails?.readme && (
+                <div className="rounded-xl border border-border-dark bg-surface-dark p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="material-symbols-outlined text-text-secondary">
+                      description
+                    </span>
+                    <h3 className="text-white text-base font-semibold">
+                      README
+                    </h3>
+                  </div>
+                  <div className="prose prose-invert max-w-none">
+                    <p className="text-text-secondary text-sm whitespace-pre-wrap">
+                      {projectDetails.readme}
+                      {projectDetails.readme.length >= 500 && "..."}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Folder Path Card */}
               <div className="group relative rounded-xl border border-border-dark bg-surface-dark p-1">
                 <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 <div className="flex items-center justify-between px-4 py-3">
-                  <div className="flex items-center gap-3 overflow-hidden">
+                  <div className="flex items-center gap-3 overflow-hidden flex-1">
                     <span className="material-symbols-outlined text-text-secondary">
                       folder_open
                     </span>
@@ -128,131 +458,335 @@ export function ProjectDetail({
                       {project.path}
                     </code>
                   </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={async () => {
+                        try {
+                          if (window.dockevShell?.openFolder) {
+                            await window.dockevShell.openFolder(project.path);
+                          }
+                        } catch (error) {
+                          console.error("Error opening folder:", error);
+                          alert("Failed to open folder in file explorer.");
+                        }
+                      }}
+                      className="p-2 rounded hover:bg-white/5 text-text-secondary hover:text-white transition-colors"
+                      title="Open Folder"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">
+                        folder_open
+                      </span>
+                    </button>
+                    <button
+                      onClick={copyPath}
+                      className="p-2 rounded hover:bg-white/5 text-text-secondary hover:text-white transition-colors"
+                      title="Copy Path"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">
+                        content_copy
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modules */}
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-white text-base font-semibold">
+                    Modules
+                  </h3>
                   <button
-                    onClick={copyPath}
-                    className="p-2 rounded hover:bg-white/5 text-text-secondary hover:text-white transition-colors"
-                    title="Copy Path"
+                    onClick={detectModules}
+                    disabled={isDetectingModules}
+                    className="text-xs text-primary hover:underline disabled:opacity-50"
                   >
-                    <span className="material-symbols-outlined text-[18px]">
-                      content_copy
-                    </span>
+                    {isDetectingModules ? "Detecting..." : "Detect Modules"}
                   </button>
+                </div>
+                <div className="flex flex-col gap-3">
+                  {modules.length > 0 ? (
+                    modules.map((module) => (
+                      <div
+                        key={module.id}
+                        className="flex items-center justify-between p-4 rounded-xl border border-border-dark bg-surface-dark hover:border-primary/30 transition-colors group"
+                      >
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                          <div className="flex items-center justify-center size-10 rounded-lg bg-primary/10 text-primary border border-primary/20 flex-shrink-0">
+                            <span className="material-symbols-outlined text-[20px]">
+                              folder
+                            </span>
+                          </div>
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span className="text-sm font-semibold text-white truncate">
+                              {module.name}
+                            </span>
+                            <span className="text-xs text-text-secondary font-mono truncate">
+                              {module.path}
+                            </span>
+                            <div className="flex gap-1.5 mt-1 flex-wrap">
+                              {module.techStack.slice(0, 3).map((tech) => (
+                                <span
+                                  key={tech}
+                                  className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20"
+                                >
+                                  {tech}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() =>
+                              handleOpenModuleIDE(module, project.defaultIde)
+                            }
+                            className="p-2 rounded hover:bg-white/5 text-text-secondary hover:text-white transition-colors"
+                            title="Open in IDE"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">
+                              code
+                            </span>
+                          </button>
+                          <button
+                            onClick={() => handleRemoveModule(module.id)}
+                            className="p-2 rounded hover:bg-red-500/10 text-text-secondary hover:text-red-400 transition-colors"
+                            title="Remove Module"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">
+                              close
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="rounded-xl border border-border-dark bg-surface-dark p-8 flex flex-col items-center justify-center gap-3 text-center">
+                      <span className="material-symbols-outlined text-[48px] text-text-secondary">
+                        folder_off
+                      </span>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-sm font-medium text-white">
+                          No modules detected
+                        </span>
+                        <span className="text-xs text-text-secondary">
+                          Click "Detect Modules" to scan for sub-projects
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  {detectedModules.length > 0 && (
+                    <div className="flex flex-col gap-2 pt-2 border-t border-border-dark">
+                      <p className="text-xs text-text-secondary font-medium">
+                        Detected Modules (Click to add):
+                      </p>
+                      {detectedModules.map((detected, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleAddModule(detected)}
+                          className="flex items-center justify-between p-3 rounded-lg border border-dashed border-border-dark bg-surface-dark/50 hover:border-primary/50 hover:bg-surface-dark transition-colors text-left"
+                        >
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-white">
+                              {detected.name}
+                            </span>
+                            <span className="text-xs text-text-secondary font-mono">
+                              {detected.path}
+                            </span>
+                            <div className="flex gap-1 mt-1">
+                              {detected.techStack.map((tech) => (
+                                <span
+                                  key={tech}
+                                  className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20"
+                                >
+                                  {tech}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          <span className="material-symbols-outlined text-text-secondary">
+                            add
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Technology Stack */}
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-white text-base font-semibold">
-                    Technology Stack
-                  </h3>
-                  <button className="text-xs text-primary hover:underline">
-                    Manage
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  {techStack.map((tech) => (
-                    <div
-                      key={tech.name}
-                      className="flex flex-col p-4 rounded-xl border border-border-dark bg-surface-dark hover:border-primary/30 transition-colors group"
+              {techStack.length > 0 && (
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-white text-base font-semibold">
+                      Technology Stack
+                    </h3>
+                    <button
+                      onClick={handleManageTechStack}
+                      className="text-xs text-primary hover:underline"
                     >
-                      <div className="flex items-start justify-between mb-3">
-                        <div
-                          className="size-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform"
-                          style={{
-                            backgroundColor: `${tech.color}10`,
-                            color: tech.color,
-                          }}
-                        >
-                          <span className="material-symbols-outlined text-[24px]">
-                            {tech.icon}
-                          </span>
+                      Manage
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {techStack.map((tech) => (
+                      <div
+                        key={tech.name}
+                        className="flex flex-col p-4 rounded-xl border border-border-dark bg-surface-dark hover:border-primary/30 transition-colors group"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div
+                            className="size-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform"
+                            style={{
+                              backgroundColor: `${tech.color}10`,
+                              color: tech.color,
+                            }}
+                          >
+                            <span className="material-symbols-outlined text-[24px]">
+                              {tech.icon}
+                            </span>
+                          </div>
                         </div>
-                        <span className="text-[10px] font-mono text-text-secondary bg-surface-dark px-1.5 py-0.5 rounded">
-                          {tech.version}
+                        <span className="text-sm font-semibold text-white">
+                          {tech.name}
+                        </span>
+                        <span className="text-xs text-text-secondary mt-1">
+                          {tech.name === "React" && "Frontend Framework"}
+                          {tech.name === "React Native / Expo" &&
+                            "Mobile Framework"}
+                          {tech.name === "Tailwind CSS" && "Utility-first CSS"}
+                          {tech.name === "TypeScript" && "Strict Syntactical"}
+                          {tech.name === "Node.js" && "Runtime Env"}
+                          {tech.name === "Next.js" && "React Framework"}
+                          {tech.name === "Vue" && "Progressive Framework"}
+                          {tech.name === "Angular" && "Platform"}
+                          {tech.name === "Python" && "Programming Language"}
+                          {tech.name === "Django" && "Web Framework"}
+                          {tech.name === "Flask" && "Micro Framework"}
+                          {tech.name === "Go" && "Programming Language"}
+                          {tech.name === "Rust" && "Systems Language"}
                         </span>
                       </div>
-                      <span className="text-sm font-semibold text-white">
-                        {tech.name}
-                      </span>
-                      <span className="text-xs text-text-secondary mt-1">
-                        {tech.name === "React" && "Frontend Framework"}
-                        {tech.name === "Tailwind CSS" && "Utility-first CSS"}
-                        {tech.name === "TypeScript" && "Strict Syntactical"}
-                        {tech.name === "Node.js" && "Runtime Env"}
-                      </span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Version Control */}
               <div className="flex flex-col gap-4">
                 <h3 className="text-white text-base font-semibold">
                   Version Control
                 </h3>
-                <div className="rounded-xl border border-border-dark bg-surface-dark overflow-hidden">
-                  <div className="flex items-center justify-between p-4 border-b border-border-dark bg-surface-dark/50">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center size-8 rounded bg-orange-500/10 text-orange-500">
-                        <span className="material-symbols-outlined text-[20px]">
-                          call_split
-                        </span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-mono text-sm font-bold text-white">
-                          {gitStatus.branch}
-                        </span>
-                        <span className="text-xs text-text-secondary">
-                          Last commit {gitStatus.lastCommit}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="flex -space-x-2">
-                        <div className="size-6 rounded-full ring-2 ring-background-dark bg-gray-300"></div>
-                        <div className="size-6 rounded-full ring-2 ring-background-dark bg-gray-400"></div>
-                      </div>
-                      <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-500 border border-orange-500/20">
-                        {gitStatus.pendingChanges} pending
-                      </span>
-                    </div>
+                {isLoadingGit ? (
+                  <div className="rounded-xl border border-border-dark bg-surface-dark p-8 flex items-center justify-center">
+                    <span className="text-text-secondary text-sm">
+                      Loading git status...
+                    </span>
                   </div>
-                  <div className="divide-y divide-border-dark">
-                    {gitStatus.files.map((file, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-3 px-4 hover:bg-surface-dark/30 transition-colors group"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span
-                            className={`material-symbols-outlined text-[16px] w-4 ${
-                              file.status === "added"
-                                ? "text-green-500"
-                                : "text-yellow-500"
-                            }`}
-                          >
-                            {file.status === "added" ? "add" : "edit"}
-                          </span>
-                          <span className="text-sm text-gray-300 font-mono group-hover:text-primary transition-colors">
-                            {file.name}
+                ) : gitStatus === null ? (
+                  <div className="rounded-xl border border-border-dark bg-surface-dark p-8 flex flex-col items-center justify-center gap-2">
+                    <span className="material-symbols-outlined text-[32px] text-text-secondary">
+                      folder_off
+                    </span>
+                    <span className="text-text-secondary text-sm">
+                      Not a git repository
+                    </span>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-border-dark bg-surface-dark overflow-hidden">
+                    <div className="flex items-center justify-between p-4 border-b border-border-dark bg-surface-dark/50">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center size-8 rounded bg-orange-500/10 text-orange-500">
+                          <span className="material-symbols-outlined text-[20px]">
+                            call_split
                           </span>
                         </div>
-                        <span className="text-xs text-text-secondary opacity-0 group-hover:opacity-100 transition-opacity capitalize">
-                          {file.status}
-                        </span>
+                        <div className="flex flex-col">
+                          <span className="font-mono text-sm font-bold text-white">
+                            {displayGitStatus.branch}
+                          </span>
+                          <span className="text-xs text-text-secondary">
+                            {displayGitStatus.lastCommitTime
+                              ? `Last commit ${displayGitStatus.lastCommitTime}`
+                              : displayGitStatus.lastCommit}
+                          </span>
+                        </div>
                       </div>
-                    ))}
+                      {displayGitStatus.pendingChanges > 0 && (
+                        <div className="flex items-center gap-4">
+                          <div className="flex -space-x-2">
+                            <div className="size-6 rounded-full ring-2 ring-background-dark bg-gray-300"></div>
+                            <div className="size-6 rounded-full ring-2 ring-background-dark bg-gray-400"></div>
+                          </div>
+                          <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-500 border border-orange-500/20">
+                            {displayGitStatus.pendingChanges} pending
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    {displayGitStatus.files.length > 0 && (
+                      <>
+                        <div className="divide-y divide-border-dark">
+                          {displayGitStatus.files.map((file, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center justify-between p-3 px-4 hover:bg-surface-dark/30 transition-colors group"
+                            >
+                              <div className="flex items-center gap-3">
+                                <span
+                                  className={`material-symbols-outlined text-[16px] w-4 ${
+                                    file.status === "added"
+                                      ? "text-green-500"
+                                      : file.status === "deleted"
+                                      ? "text-red-500"
+                                      : "text-yellow-500"
+                                  }`}
+                                >
+                                  {file.status === "added"
+                                    ? "add"
+                                    : file.status === "deleted"
+                                    ? "delete"
+                                    : "edit"}
+                                </span>
+                                <span className="text-sm text-gray-300 font-mono group-hover:text-primary transition-colors truncate flex-1">
+                                  {file.name}
+                                </span>
+                              </div>
+                              <span className="text-xs text-text-secondary opacity-0 group-hover:opacity-100 transition-opacity capitalize ml-2">
+                                {file.status}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        {displayGitStatus.pendingChanges >
+                          displayGitStatus.files.length && (
+                          <div className="bg-surface-dark/30 p-2 text-center border-t border-border-dark">
+                            <button
+                              onClick={handleViewAllChanges}
+                              className="text-xs font-medium text-text-secondary hover:text-white transition-colors flex items-center justify-center gap-1 w-full py-1"
+                            >
+                              <span>
+                                View all {displayGitStatus.pendingChanges}{" "}
+                                changes
+                              </span>
+                              <span className="material-symbols-outlined text-[14px]">
+                                arrow_forward
+                              </span>
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    {displayGitStatus.pendingChanges === 0 &&
+                      displayGitStatus.files.length === 0 && (
+                        <div className="p-4 text-center">
+                          <span className="text-xs text-text-secondary">
+                            No pending changes
+                          </span>
+                        </div>
+                      )}
                   </div>
-                  <div className="bg-surface-dark/30 p-2 text-center border-t border-border-dark">
-                    <button className="text-xs font-medium text-text-secondary hover:text-white transition-colors flex items-center justify-center gap-1 w-full py-1">
-                      <span>View all 12 changes</span>
-                      <span className="material-symbols-outlined text-[14px]">
-                        arrow_forward
-                      </span>
-                    </button>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
 
@@ -268,7 +802,7 @@ export function ProjectDetail({
                     <span className="flex size-2 rounded-full bg-green-500"></span>
                   </div>
                   <button
-                    onClick={() => onOpenIDE(project.defaultIde)}
+                    onClick={() => onOpenIDE(project.path, project.defaultIde)}
                     className="relative group flex items-center justify-between w-full p-4 rounded-lg bg-primary hover:bg-primary-hover text-white transition-all overflow-hidden"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -296,7 +830,7 @@ export function ProjectDetail({
                   </button>
                   <div className="grid grid-cols-2 gap-2">
                     <button
-                      onClick={() => onOpenIDE("cursor")}
+                      onClick={() => onOpenIDE(project.path, "cursor")}
                       className="flex flex-col items-center justify-center gap-2 p-3 rounded-lg border border-border-dark bg-surface-dark hover:bg-surface-dark/80 transition-all group"
                     >
                       <span className="material-symbols-outlined text-[20px] text-text-secondary group-hover:text-white">
@@ -307,7 +841,7 @@ export function ProjectDetail({
                       </span>
                     </button>
                     <button
-                      onClick={() => onOpenIDE("webstorm")}
+                      onClick={() => onOpenIDE(project.path, "webstorm")}
                       className="flex flex-col items-center justify-center gap-2 p-3 rounded-lg border border-border-dark bg-surface-dark hover:bg-surface-dark/80 transition-all group"
                     >
                       <span className="material-symbols-outlined text-[20px] text-text-secondary group-hover:text-white">
@@ -319,7 +853,7 @@ export function ProjectDetail({
                     </button>
                   </div>
                   <button
-                    onClick={() => onOpenIDE("terminal")}
+                    onClick={() => onOpenIDE(project.path, "terminal")}
                     className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-dashed border-border-dark text-text-secondary hover:text-white hover:border-primary transition-all text-sm font-medium"
                   >
                     <span className="material-symbols-outlined text-[18px]">
@@ -336,55 +870,76 @@ export function ProjectDetail({
                   Project Details
                 </h3>
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center text-sm py-1 border-b border-border-dark/50 pb-2">
-                    <span className="text-text-secondary flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[16px]">
-                        language
+                  {projectStats?.language && (
+                    <div className="flex justify-between items-center text-sm py-1 border-b border-border-dark/50 pb-2">
+                      <span className="text-text-secondary flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[16px]">
+                          language
+                        </span>
+                        Language
                       </span>
-                      Language
-                    </span>
-                    <span className="font-medium text-white bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded text-xs">
-                      TypeScript
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm py-1 border-b border-border-dark/50 pb-2">
-                    <span className="text-text-secondary flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[16px]">
-                        hard_drive
+                      <span className="font-medium text-white bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded text-xs">
+                        {projectStats.language}
                       </span>
-                      Size
-                    </span>
-                    <span className="font-mono text-xs text-white">
-                      124.5 MB
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm py-1 border-b border-border-dark/50 pb-2">
-                    <span className="text-text-secondary flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[16px]">
-                        calendar_today
-                      </span>
-                      Created
-                    </span>
-                    <span className="font-medium text-white">
-                      {new Date().toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm py-1">
-                    <span className="text-text-secondary flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[16px]">
-                        deployed_code
-                      </span>
-                      Docker
-                    </span>
-                    <span className="font-medium text-green-500 text-xs flex items-center gap-1">
-                      <span className="size-1.5 rounded-full bg-green-500"></span>
-                      Enabled
-                    </span>
-                  </div>
+                    </div>
+                  )}
+                  {projectStats && (
+                    <>
+                      <div className="flex justify-between items-center text-sm py-1 border-b border-border-dark/50 pb-2">
+                        <span className="text-text-secondary flex items-center gap-2">
+                          <span className="material-symbols-outlined text-[16px]">
+                            hard_drive
+                          </span>
+                          Size
+                        </span>
+                        <span className="font-mono text-xs text-white">
+                          {formatBytes(projectStats.size)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm py-1 border-b border-border-dark/50 pb-2">
+                        <span className="text-text-secondary flex items-center gap-2">
+                          <span className="material-symbols-outlined text-[16px]">
+                            description
+                          </span>
+                          Files
+                        </span>
+                        <span className="font-medium text-white">
+                          {projectStats.fileCount.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm py-1 border-b border-border-dark/50 pb-2">
+                        <span className="text-text-secondary flex items-center gap-2">
+                          <span className="material-symbols-outlined text-[16px]">
+                            folder
+                          </span>
+                          Folders
+                        </span>
+                        <span className="font-medium text-white">
+                          {projectStats.folderCount.toLocaleString()}
+                        </span>
+                      </div>
+                      {projectStats.created > 0 && (
+                        <div className="flex justify-between items-center text-sm py-1">
+                          <span className="text-text-secondary flex items-center gap-2">
+                            <span className="material-symbols-outlined text-[16px]">
+                              calendar_today
+                            </span>
+                            Created
+                          </span>
+                          <span className="font-medium text-white">
+                            {new Date(projectStats.created).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              }
+                            )}
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
 

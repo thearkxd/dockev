@@ -1,61 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage";
+import { SettingsPage } from "./pages/SettingsPage";
 import { PageTransition } from "./components/PageTransition";
 import type { Project } from "./types/Project";
-
-// Mock data - later will be replaced with actual state management
-const initialProjects: Project[] = [
-  {
-    id: "1",
-    name: "E-commerce API",
-    path: "~/dev/backend/shop-api",
-    category: "Backend",
-    tags: ["Node", "Express"],
-    defaultIde: "vscode",
-    lastOpenedAt: Date.now() - 2 * 60 * 60 * 1000, // 2 hours ago
-  },
-  {
-    id: "2",
-    name: "Client Dashboard",
-    path: "~/dev/web/dashboard-app",
-    category: "Web",
-    tags: ["React", "Tailwind"],
-    defaultIde: "cursor",
-    lastOpenedAt: Date.now() - 24 * 60 * 60 * 1000, // 1 day ago
-  },
-  {
-    id: "3",
-    name: "Fitness Tracker",
-    path: "~/dev/mobile/fitness-tracker",
-    category: "Mobile",
-    tags: ["Expo", "TypeScript"],
-    defaultIde: "vscode",
-    lastOpenedAt: Date.now() - 3 * 24 * 60 * 60 * 1000, // 3 days ago
-  },
-  {
-    id: "4",
-    name: "Image Classifier",
-    path: "~/dev/experiments/ml-vision",
-    category: "Experiments",
-    tags: ["Python", "PyTorch"],
-    defaultIde: "vscode",
-    lastOpenedAt: Date.now() - 7 * 24 * 60 * 60 * 1000, // 1 week ago
-  },
-  {
-    id: "5",
-    name: "Legacy CRM",
-    path: "~/dev/archived/v1-crm",
-    category: "Archived",
-    tags: ["PHP", "MySQL"],
-    defaultIde: "vscode",
-    lastOpenedAt: Date.now() - 180 * 24 * 60 * 60 * 1000, // 6 months ago
-  },
-];
+import { storage } from "./utils/storage";
 
 export default function App() {
-  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load projects from localStorage on mount
+  useEffect(() => {
+    const loadedProjects = storage.getProjects();
+    setProjects(loadedProjects);
+    setIsLoading(false);
+  }, []);
+
+  // Save projects to localStorage whenever they change
+  useEffect(() => {
+    if (!isLoading) {
+      storage.saveProjects(projects);
+    }
+  }, [projects, isLoading]);
 
   const handleAddProject = (projectData: {
     name: string;
@@ -73,29 +41,55 @@ export default function App() {
       defaultIde: projectData.defaultIde as "vscode" | "cursor" | "webstorm",
       lastOpenedAt: undefined,
     };
-    setProjects([...projects, newProject]);
+    const updatedProjects = [...projects, newProject];
+    setProjects(updatedProjects);
+    // storage.saveProjects will be called by useEffect
   };
 
   const handleUpdateProject = (id: string, updates: Partial<Project>) => {
-    setProjects(projects.map((p) => (p.id === id ? { ...p, ...updates } : p)));
+    const updatedProjects = projects.map((p) =>
+      p.id === id ? { ...p, ...updates } : p
+    );
+    setProjects(updatedProjects);
+    // storage.saveProjects will be called by useEffect
   };
 
   const handleDeleteProject = (id: string) => {
-    setProjects(projects.filter((p) => p.id !== id));
+    const updatedProjects = projects.filter((p) => p.id !== id);
+    setProjects(updatedProjects);
+    // storage.saveProjects will be called by useEffect
   };
 
   const handleOpenIDE = async (projectPath: string, ide: string) => {
     try {
       if (window.dockevWindow?.launch?.ide) {
         await window.dockevWindow.launch.ide(projectPath, ide);
+      } else {
+        console.error("dockevWindow.launch.ide is not available");
+        alert(
+          "IDE launch functionality is not available. Please restart the application."
+        );
       }
     } catch (error) {
       console.error("Error launching IDE:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       alert(
-        `Failed to launch ${ide}. Make sure it's installed and available in PATH.`
+        `Failed to launch ${ide}.\n\n${errorMessage}\n\nMake sure it's installed and available in PATH.`
       );
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="bg-background-dark text-text-primary font-display antialiased overflow-hidden selection:bg-primary/20 selection:text-primary flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+          <p className="text-text-secondary">Loading projects...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <BrowserRouter>
@@ -108,6 +102,9 @@ export default function App() {
                 <ProjectsPage
                   projects={projects}
                   onAddProject={handleAddProject}
+                  onUpdateProject={handleUpdateProject}
+                  onDeleteProject={handleDeleteProject}
+                  onOpenIDE={handleOpenIDE}
                 />
               }
             />
@@ -122,10 +119,11 @@ export default function App() {
                 />
               }
             />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </PageTransition>
-      </div>
+    </div>
     </BrowserRouter>
   );
 }
