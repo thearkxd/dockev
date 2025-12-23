@@ -8,6 +8,13 @@ interface TitleBarProps {
   projectName?: string;
   showSearch?: boolean;
   showActions?: boolean;
+  projects?: Array<{
+    id: string;
+    name: string;
+    path: string;
+    category: string;
+    tags: string[];
+  }>;
 }
 
 export function TitleBar({
@@ -15,8 +22,15 @@ export function TitleBar({
   projectName,
   showSearch = false,
   showActions = false,
+  projects = [],
 }: TitleBarProps) {
   const navigate = useNavigate();
+
+  // Handle search button click
+  const handleSearchClick = () => {
+    // Trigger global spotlight open via custom event
+    window.dispatchEvent(new CustomEvent("openSpotlight"));
+  };
   return (
     <header className="flex items-center justify-between border-b border-border-dark/50 bg-background-dark/80 backdrop-blur-md px-6 py-3 fixed top-0 left-0 right-0 z-50 select-none drag-region">
       <div className="flex items-center gap-6">
@@ -35,9 +49,15 @@ export function TitleBar({
             </button>
             <div className="h-5 w-px bg-border-dark hidden md:block"></div>
             <div className="hidden md:flex items-center gap-2 text-sm text-text-secondary">
-              <span className="hover:text-white cursor-pointer transition-colors no-drag">
-                {breadcrumb.label}
-              </span>
+              <button
+                onClick={breadcrumb.onClick}
+                className="flex items-center gap-1.5 hover:text-white transition-colors no-drag group"
+              >
+                <span className="material-symbols-outlined text-[18px] group-hover:-translate-x-0.5 transition-transform">
+                  arrow_back
+                </span>
+                <span>{breadcrumb.label}</span>
+              </button>
               {projectName && (
                 <>
                   <span className="material-symbols-outlined text-[14px]">
@@ -55,13 +75,16 @@ export function TitleBar({
 
       <div className="flex items-center gap-3 no-drag">
         {showSearch && (
-          <button className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md border border-border-dark bg-surface-dark/50 text-text-secondary hover:border-border-dark hover:text-white transition-colors text-sm">
+          <button
+            onClick={handleSearchClick}
+            className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md border border-border-dark bg-surface-dark/50 text-text-secondary hover:border-border-dark hover:text-white transition-colors text-sm cursor-pointer"
+          >
             <span className="material-symbols-outlined text-[16px]">
               search
             </span>
             <span className="pr-8">Search...</span>
             <kbd className="hidden lg:inline-flex h-5 items-center gap-1 rounded border border-border-dark bg-surface-dark px-1.5 font-mono text-[10px] font-medium text-text-secondary">
-              ⌘K
+              {navigator.platform.includes("Mac") ? "⌘" : "Ctrl"}K
             </kbd>
           </button>
         )}

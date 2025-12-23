@@ -101,6 +101,7 @@ export function ProjectDetailPage({
         projectName={project.name}
         showSearch={true}
         showActions={true}
+        projects={projects}
       />
       <div className="pt-[49px]">
         <ProjectDetail

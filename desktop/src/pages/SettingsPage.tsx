@@ -91,6 +91,7 @@ export function SettingsPage() {
           label: "Projects",
           onClick: () => navigate("/"),
         }}
+        projectName="Settings"
         showSearch={false}
         showActions={false}
       />

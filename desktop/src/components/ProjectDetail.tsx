@@ -885,16 +885,22 @@ export function ProjectDetail({
                   )}
                   {projectStats && (
                     <>
-                      <div className="flex justify-between items-center text-sm py-1 border-b border-border-dark/50 pb-2">
-                        <span className="text-text-secondary flex items-center gap-2">
-                          <span className="material-symbols-outlined text-[16px]">
-                            hard_drive
+                      <div className="flex flex-col gap-1 py-1 border-b border-border-dark/50 pb-2">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-text-secondary flex items-center gap-2">
+                            <span className="material-symbols-outlined text-[16px]">
+                              hard_drive
+                            </span>
+                            Size
                           </span>
-                          Size
-                        </span>
-                        <span className="font-mono text-xs text-white">
-                          {formatBytes(projectStats.size)}
-                        </span>
+                          <span className="font-mono text-xs text-white">
+                            {formatBytes(projectStats.size)}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-text-secondary/70 pl-7">
+                          Excluding node_modules, .git, dist, build, .next,
+                          .cache, .vscode, .idea
+                        </p>
                       </div>
                       <div className="flex justify-between items-center text-sm py-1 border-b border-border-dark/50 pb-2">
                         <span className="text-text-secondary flex items-center gap-2">

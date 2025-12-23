@@ -44,7 +44,7 @@ export function ProjectsPage({ projects, onAddProject }: ProjectsPageProps) {
 
   return (
     <>
-      <TitleBar showSearch={true} showActions={true} />
+      <TitleBar showSearch={true} showActions={true} projects={projects} />
       <div className="relative flex h-screen w-full flex-row overflow-hidden pt-[49px]">
         <Sidebar
           onNewProjectClick={() => setIsModalOpen(true)}

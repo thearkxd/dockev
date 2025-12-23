@@ -4,12 +4,35 @@ import { ProjectsPage } from "./pages/ProjectsPage";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { PageTransition } from "./components/PageTransition";
+import { Spotlight } from "./components/Spotlight";
 import type { Project } from "./types/Project";
 import { storage } from "./utils/storage";
 
 export default function App() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSpotlightOpen, setIsSpotlightOpen] = useState(false);
+
+  // Handle Cmd/Ctrl+K shortcut globally and custom event
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setIsSpotlightOpen(true);
+      }
+    };
+
+    const handleOpenSpotlight = () => {
+      setIsSpotlightOpen(true);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("openSpotlight", handleOpenSpotlight as EventListener);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("openSpotlight", handleOpenSpotlight as EventListener);
+    };
+  }, []);
 
   // Load projects from localStorage on mount
   useEffect(() => {
@@ -123,7 +146,12 @@ export default function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </PageTransition>
-    </div>
+        <Spotlight
+          isOpen={isSpotlightOpen}
+          onClose={() => setIsSpotlightOpen(false)}
+          projects={projects}
+        />
+      </div>
     </BrowserRouter>
   );
 }
