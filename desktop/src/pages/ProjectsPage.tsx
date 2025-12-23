@@ -21,7 +21,13 @@ interface ProjectsPageProps {
   onOpenIDE?: (projectPath: string, ide: string) => Promise<void>;
 }
 
-export function ProjectsPage({ projects, onAddProject }: ProjectsPageProps) {
+export function ProjectsPage({ 
+  projects, 
+  onAddProject,
+  onUpdateProject,
+  onDeleteProject,
+  onOpenIDE,
+}: ProjectsPageProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const navigate = useNavigate();
@@ -60,6 +66,18 @@ export function ProjectsPage({ projects, onAddProject }: ProjectsPageProps) {
                   key={project.id}
                   project={project}
                   onClick={() => handleProjectClick(project)}
+                  onOpenIDE={onOpenIDE}
+                  onRevealInExplorer={async (projectPath: string) => {
+                    if (window.dockevShell?.openFolder) {
+                      await window.dockevShell.openFolder(projectPath);
+                    }
+                  }}
+                  onArchive={(projectId: string) => {
+                    if (onUpdateProject) {
+                      onUpdateProject(projectId, { category: "Archived" });
+                    }
+                  }}
+                  onDelete={onDeleteProject}
                 />
               ))}
               <button

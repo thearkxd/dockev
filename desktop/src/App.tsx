@@ -9,9 +9,32 @@ import type { Project } from "./types/Project";
 import { storage } from "./utils/storage";
 
 export default function App() {
+  console.log("App component rendering...");
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSpotlightOpen, setIsSpotlightOpen] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  // Error boundary effect
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error("Uncaught error:", event.error);
+      setError(event.error);
+    };
+
+    const handleRejection = (event: PromiseRejectionEvent) => {
+      console.error("Unhandled promise rejection:", event.reason);
+      setError(event.reason instanceof Error ? event.reason : new Error(String(event.reason)));
+    };
+
+    window.addEventListener("error", handleError);
+    window.addEventListener("unhandledrejection", handleRejection);
+
+    return () => {
+      window.removeEventListener("error", handleError);
+      window.removeEventListener("unhandledrejection", handleRejection);
+    };
+  }, []);
 
   // Handle Cmd/Ctrl+K shortcut globally and custom event
   useEffect(() => {
@@ -102,6 +125,27 @@ export default function App() {
       );
     }
   };
+
+  if (error) {
+    return (
+      <div className="bg-background-dark text-text-primary font-display antialiased overflow-hidden selection:bg-primary/20 selection:text-primary flex items-center justify-center h-screen">
+        <div className="text-center max-w-md mx-auto p-8">
+          <div className="text-red-400 text-4xl mb-4">⚠️</div>
+          <h2 className="text-white text-xl font-bold mb-2">Bir Hata Oluştu</h2>
+          <p className="text-text-secondary mb-4">{error.message}</p>
+          <button
+            onClick={() => {
+              setError(null);
+              window.location.reload();
+            }}
+            className="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-md transition-colors"
+          >
+            Sayfayı Yenile
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

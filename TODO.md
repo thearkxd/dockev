@@ -94,10 +94,10 @@
 
 #### 4. Arama ve Filtreleme
 
-- [ ] TitleBar'daki search bar işlevsel hale getir
-- [ ] Proje adına göre arama
-- [ ] Teknoloji stack'e göre filtreleme
-- [ ] Tag'lere göre filtreleme
+- [x] TitleBar'daki search bar işlevsel hale getir
+- [x] Proje adına göre arama
+- [x] Teknoloji stack'e göre filtreleme
+- [x] Tag'lere göre filtreleme
 - [ ] Tarih aralığına göre filtreleme
 
 #### 5. Bildirimler ve Geri Bildirimler

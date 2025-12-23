@@ -103,7 +103,7 @@ export function ProjectDetailPage({
         showActions={true}
         projects={projects}
       />
-      <div className="pt-[49px]">
+      <div className="h-screen pt-[49px] overflow-y-auto">
         <ProjectDetail
           project={project}
           onOpenIDE={handleOpenIDE}

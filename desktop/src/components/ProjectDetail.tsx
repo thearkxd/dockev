@@ -323,7 +323,7 @@ export function ProjectDetail({
   return (
     <div className="bg-background-dark text-text-primary font-display antialiased min-h-screen flex flex-col">
       {/* Main Content */}
-      <main className="flex-1 flex justify-center py-10 px-4 md:px-8 overflow-y-auto">
+      <main className="flex-1 flex justify-center py-10 px-4 md:px-8">
         <div className="flex flex-col max-w-7xl w-full gap-8">
           {/* Project Header */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">

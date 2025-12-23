@@ -19,12 +19,34 @@ export function Spotlight({ isOpen, onClose, projects }: SpotlightProps) {
   const filteredProjects = projects.filter((project) => {
     if (!query.trim()) return false;
     const searchTerm = query.toLowerCase();
-    return (
+    
+    // Basic project fields
+    const matchesBasic =
       project.name.toLowerCase().includes(searchTerm) ||
       project.path.toLowerCase().includes(searchTerm) ||
       project.category.toLowerCase().includes(searchTerm) ||
-      project.tags.some((tag) => tag.toLowerCase().includes(searchTerm))
+      project.tags.some((tag) => tag.toLowerCase().includes(searchTerm));
+
+    // Module search
+    const matchesModules = project.modules?.some((module) => {
+      return (
+        module.name.toLowerCase().includes(searchTerm) ||
+        module.path.toLowerCase().includes(searchTerm) ||
+        module.techStack.some((tech) => tech.toLowerCase().includes(searchTerm))
+      );
+    });
+
+    // Technology stack search (from modules)
+    const allTechStack = project.modules?.flatMap((module) => module.techStack) || [];
+    const matchesTechStack = allTechStack.some((tech) =>
+      tech.toLowerCase().includes(searchTerm)
     );
+
+    // Project details search (description, author, etc.)
+    // Note: projectDetails are loaded dynamically, so we can't search them here
+    // But we can search tags which might include tech stack info
+    
+    return matchesBasic || matchesModules || matchesTechStack;
   });
 
   // Focus input when modal opens
@@ -145,7 +167,7 @@ export function Spotlight({ isOpen, onClose, projects }: SpotlightProps) {
                       Search projects
                     </p>
                     <p className="text-text-secondary text-xs mt-1">
-                      Type to search by name, path, category, or tags
+                      Type to search by name, path, category, tags, modules, or technologies
                     </p>
                   </div>
                 </div>
@@ -187,10 +209,16 @@ export function Spotlight({ isOpen, onClose, projects }: SpotlightProps) {
                         <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
                           {project.category}
                         </span>
+                        {project.modules && project.modules.length > 0 && (
+                          <span className="text-xs px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                            {project.modules.length} {project.modules.length === 1 ? "module" : "modules"}
+                          </span>
+                        )}
                       </div>
                       <p className="text-text-secondary text-xs font-mono truncate">
                         {project.path}
                       </p>
+                      {/* Show tags */}
                       {project.tags.length > 0 && (
                         <div className="flex gap-1 mt-1.5 flex-wrap">
                           {project.tags.slice(0, 3).map((tag) => (
@@ -201,6 +229,47 @@ export function Spotlight({ isOpen, onClose, projects }: SpotlightProps) {
                               {tag}
                             </span>
                           ))}
+                        </div>
+                      )}
+                      {/* Show technology stack from modules */}
+                      {project.modules && project.modules.length > 0 && (
+                        <div className="flex gap-1 mt-1.5 flex-wrap">
+                          {Array.from(
+                            new Set(
+                              project.modules.flatMap((module) => module.techStack)
+                            )
+                          )
+                            .slice(0, 4)
+                            .map((tech) => (
+                              <span
+                                key={tech}
+                                className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20"
+                              >
+                                {tech}
+                              </span>
+                            ))}
+                        </div>
+                      )}
+                      {/* Show module names if they match search */}
+                      {project.modules && project.modules.length > 0 && query.trim() && (
+                        <div className="flex gap-1 mt-1.5 flex-wrap">
+                          {project.modules
+                            .filter((module) =>
+                              module.name.toLowerCase().includes(query.toLowerCase()) ||
+                              module.path.toLowerCase().includes(query.toLowerCase())
+                            )
+                            .slice(0, 2)
+                            .map((module) => (
+                              <span
+                                key={module.id}
+                                className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center gap-1"
+                              >
+                                <span className="material-symbols-outlined text-[10px]">
+                                  folder
+                                </span>
+                                {module.name}
+                              </span>
+                            ))}
                         </div>
                       )}
                     </div>

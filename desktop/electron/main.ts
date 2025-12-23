@@ -22,6 +22,7 @@ function createWindow() {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
+      webSecurity: true,
     },
   });
 
@@ -30,7 +31,27 @@ function createWindow() {
   const isDev = !app.isPackaged;
 
   if (isDev) {
-    mainWindow.loadURL("http://localhost:5173");
+    const url = "http://localhost:5173";
+    console.log("Loading URL:", url);
+    mainWindow.loadURL(url).catch((error) => {
+      console.error("Error loading URL:", error);
+    });
+
+    // Open DevTools in development
+    mainWindow.webContents.openDevTools();
+
+    // Log when page finishes loading
+    mainWindow.webContents.on("did-finish-load", () => {
+      console.log("Page finished loading");
+    });
+
+    // Log any errors
+    mainWindow.webContents.on(
+      "did-fail-load",
+      (event, errorCode, errorDescription) => {
+        console.error("Failed to load page:", errorCode, errorDescription);
+      }
+    );
   } else {
     mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
   }

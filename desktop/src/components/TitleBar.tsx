@@ -32,7 +32,7 @@ export function TitleBar({
     window.dispatchEvent(new CustomEvent("openSpotlight"));
   };
   return (
-    <header className="flex items-center justify-between border-b border-border-dark/50 bg-background-dark/80 backdrop-blur-md px-6 py-3 fixed top-0 left-0 right-0 z-50 select-none drag-region">
+    <header className="flex items-center justify-between border-b border-border-dark/50 bg-background-dark/80 backdrop-blur-md px-6 py-3 fixed top-0 left-0 right-0 z-40 select-none drag-region">
       <div className="flex items-center gap-6">
         {breadcrumb ? (
           <>

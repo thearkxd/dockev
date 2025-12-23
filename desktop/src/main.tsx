@@ -7,10 +7,19 @@ import "./types/window.d.ts";
 // Preload kontrolü
 if (typeof window !== "undefined") {
   console.log("dockevWindow available:", !!window.dockevWindow);
+  console.log("Root element:", document.getElementById("root"));
 }
 
-createRoot(document.getElementById("root")!).render(
+const rootElement = document.getElementById("root");
+if (!rootElement) {
+  console.error("Root element not found!");
+  throw new Error("Root element not found");
+}
+
+console.log("Rendering App component...");
+createRoot(rootElement).render(
   <StrictMode>
     <App />
   </StrictMode>
 );
+console.log("App component rendered!");
