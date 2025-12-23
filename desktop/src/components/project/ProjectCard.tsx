@@ -24,6 +24,7 @@ export const ProjectCard = ({
     isOpen: boolean;
     position: { x: number; y: number };
   }>({ isOpen: false, position: { x: 0, y: 0 } });
+  const [gitRemoteUrl, setGitRemoteUrl] = useState<string | null>(null);
   const getCategoryIcon = (category: string) => {
     switch (category.toLowerCase()) {
       case "backend":
@@ -111,6 +112,21 @@ export const ProjectCard = ({
     }, 60000); // Update every minute
     return () => clearInterval(interval);
   }, []);
+
+  // Load git remote URL
+  useEffect(() => {
+    const loadGitRemoteUrl = async () => {
+      try {
+        if (window.dockevWindow?.git?.getRemoteUrl) {
+          const remoteUrl = await window.dockevWindow.git.getRemoteUrl(project.path);
+          setGitRemoteUrl(remoteUrl);
+        }
+      } catch (error) {
+        console.error("Error loading git remote URL:", error);
+      }
+    };
+    loadGitRemoteUrl();
+  }, [project.path]);
 
   const formatTimeAgo = (timestamp?: number) => {
     if (!timestamp) return "Not opened yet";
@@ -211,6 +227,24 @@ export const ProjectCard = ({
     }
   };
 
+  const handleOpenInGitHub = async () => {
+    if (!gitRemoteUrl) return;
+    
+    // Convert git remote URL to GitHub web URL
+    let url = gitRemoteUrl;
+    if (url.startsWith("git@")) {
+      url = url.replace("git@", "https://").replace(":", "/");
+    }
+    if (url.startsWith("https://github.com") || url.startsWith("http://github.com")) {
+      url = url.replace(/\.git$/, "");
+      if (window.dockevWindow?.openExternal) {
+        await window.dockevWindow.openExternal(url);
+      } else {
+        window.open(url, "_blank");
+      }
+    }
+  };
+
   const availableIDEs = settingsStorage.getAllIDEs();
 
   return (
@@ -304,9 +338,11 @@ export const ProjectCard = ({
         onOpen={handleOpen}
         onOpenIn={handleOpenIn}
         onRevealInExplorer={handleRevealInExplorer}
+        onOpenInGitHub={handleOpenInGitHub}
         onArchive={handleArchive}
         onDelete={handleDelete}
         availableIDEs={availableIDEs}
+        gitRemoteUrl={gitRemoteUrl}
       />
     </>
   );

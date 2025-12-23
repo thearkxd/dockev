@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import type { Project } from "../../types/Project";
+import { Icon } from "@iconify/react";
 
 interface ProjectCardContextMenuProps {
   isOpen: boolean;
@@ -9,9 +10,11 @@ interface ProjectCardContextMenuProps {
   onOpen: () => void | Promise<void>;
   onOpenIn: (ide: string) => void | Promise<void>;
   onRevealInExplorer: () => void | Promise<void>;
+  onOpenInGitHub?: () => void | Promise<void>;
   onArchive: () => void;
   onDelete: () => void;
   availableIDEs: Array<{ id: string; name: string }>;
+  gitRemoteUrl?: string | null;
 }
 
 export function ProjectCardContextMenu({
@@ -22,9 +25,11 @@ export function ProjectCardContextMenu({
   onOpen,
   onOpenIn,
   onRevealInExplorer,
+  onOpenInGitHub,
   onArchive,
   onDelete,
   availableIDEs,
+  gitRemoteUrl,
 }: ProjectCardContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const [isOpenInSubmenuOpen, setIsOpenInSubmenuOpen] = useState(false);
@@ -131,7 +136,9 @@ export function ProjectCardContextMenu({
                   className="w-full flex items-center gap-3 px-4 py-2 text-sm text-white hover:bg-white/5 transition-colors text-left"
                 >
                   <span className="material-symbols-outlined text-[18px] text-text-secondary">
-                    {ide.id === "vscode" || ide.id === "cursor" || ide.id === "webstorm"
+                    {ide.id === "vscode" ||
+                    ide.id === "cursor" ||
+                    ide.id === "webstorm"
                       ? "code"
                       : ide.id === "terminal"
                       ? "terminal"
@@ -160,6 +167,39 @@ export function ProjectCardContextMenu({
           <span>Reveal in Explorer</span>
         </button>
 
+        {/* Open in GitHub */}
+        {onOpenInGitHub &&
+          gitRemoteUrl &&
+          (() => {
+            // Convert git remote URL to GitHub web URL
+            let url = gitRemoteUrl;
+            if (url.startsWith("git@")) {
+              url = url.replace("git@", "https://").replace(":", "/");
+            }
+            if (
+              url.startsWith("https://github.com") ||
+              url.startsWith("http://github.com")
+            ) {
+              url = url.replace(/\.git$/, "");
+              return (
+                <>
+                  <div className="h-px bg-border-dark my-1"></div>
+                  <button
+                    onClick={async () => {
+                      await onOpenInGitHub();
+                      onClose();
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-white hover:bg-white/5 transition-colors text-left"
+                  >
+                    <Icon icon="mdi:github" width="20" height="20" />
+                    <span>Open in GitHub</span>
+                  </button>
+                </>
+              );
+            }
+            return null;
+          })()}
+
         <div className="h-px bg-border-dark my-1"></div>
 
         {/* Archive */}
@@ -186,13 +226,10 @@ export function ProjectCardContextMenu({
           }}
           className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors text-left"
         >
-          <span className="material-symbols-outlined text-[18px]">
-            delete
-          </span>
+          <span className="material-symbols-outlined text-[18px]">delete</span>
           <span>Delete</span>
         </button>
       </div>
     </>
   );
 }
-

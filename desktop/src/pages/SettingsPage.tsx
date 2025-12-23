@@ -104,7 +104,7 @@ export function SettingsPage() {
         showSearch={false}
         showActions={false}
       />
-      <div className="pt-[49px]">
+      <div className="h-screen pt-[49px] overflow-y-auto">
         <main className="flex-1 flex justify-center py-10 px-4 sm:px-6 lg:px-8 min-h-screen">
           <div className="w-full max-w-[720px] flex flex-col gap-10">
             <div className="flex flex-col gap-3 pb-4 border-b border-border-dark/50">

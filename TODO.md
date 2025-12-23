@@ -73,9 +73,9 @@
   - [x] Teknoloji ekleme/kaldırma
   - [x] Versiyon bilgileri güncelleme
   - [x] Custom teknoloji ekleme
-- [ ] **View All Changes Butonu**: Git değişikliklerini detaylı göster
-  - [ ] Tüm değişen dosyaları listele
-  - [ ] Diff görüntüleme
+- [x] **View All Changes Butonu**: Git değişikliklerini detaylı göster
+  - [x] Tüm değişen dosyaları listele
+  - [x] Diff görüntüleme
   - [ ] Commit yapma özelliği (opsiyonel)
 
 #### 2. Veri Kalıcılığı
