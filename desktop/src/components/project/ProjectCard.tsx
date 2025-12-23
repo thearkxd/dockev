@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import type { Project } from "../types/Project";
+import type { Project } from "../../types/Project";
 import { ProjectCardContextMenu } from "./ProjectCardContextMenu";
-import { settingsStorage } from "../utils/settingsStorage";
+import { settingsStorage } from "../../utils/settingsStorage";
 
 interface ProjectCardProps {
   project: Project;
@@ -130,20 +130,20 @@ export const ProjectCard = ({
   const formatPath = (path: string) => {
     // Windows path format: C:\Users\Alperr\Desktop\hizmetino
     // Show: C:\...\Desktop\hizmetino
-    
+
     const parts = path.split(/[/\\]/).filter(Boolean);
-    
+
     if (parts.length <= 3) {
       // If path is short enough, show as is
       return path;
     }
-    
+
     // Get drive letter (first part, e.g., "C:")
     const drive = parts[0];
-    
+
     // Get last 2 segments
     const lastTwo = parts.slice(-2);
-    
+
     // Combine: C:\...\Desktop\hizmetino
     return `${drive}\\...\\${lastTwo.join("\\")}`;
   };

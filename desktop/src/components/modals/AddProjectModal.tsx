@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { settingsStorage } from "../utils/settingsStorage";
+import { settingsStorage } from "../../utils/settingsStorage";
 
 interface AddProjectModalProps {
   isOpen: boolean;
@@ -32,7 +32,9 @@ export function AddProjectModal({
 
   // Reset form when modal closes
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      setIsAnimating(true);
+    } else {
       setName("");
       setPath("");
       setCategory("");
@@ -41,8 +43,6 @@ export function AddProjectModal({
       setTagInput("");
       setErrors({});
       setIsAnimating(false);
-    } else {
-      setIsAnimating(true);
     }
   }, [isOpen]);
 
@@ -90,22 +90,22 @@ export function AddProjectModal({
 
   const validateForm = () => {
     const newErrors: { name?: string; path?: string } = {};
-    
+
     if (!name.trim()) {
       newErrors.name = "Project name is required";
     }
-    
+
     if (!path.trim()) {
       newErrors.path = "Folder path is required";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSave = () => {
     if (!validateForm()) return;
-    
+
     onSave({
       name: name.trim(),
       path: path.trim(),
@@ -244,10 +244,27 @@ export function AddProjectModal({
                       onChange={(e) => setCategory(e.target.value)}
                       className="w-full appearance-none rounded-lg border border-border-dark bg-white/5 px-4 py-3 pr-10 text-sm text-white transition-all focus:border-primary focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-primary/20"
                     >
-                      <option value="Web" className="text-white bg-border-dark">Web</option>
-                      <option value="Mobile" className="text-white bg-border-dark">Mobile</option>
-                      <option value="Backend" className="text-white bg-border-dark">Backend</option>
-                      <option value="Experiments" className="text-white bg-border-dark">Experiments</option>
+                      <option value="Web" className="text-white bg-border-dark">
+                        Web
+                      </option>
+                      <option
+                        value="Mobile"
+                        className="text-white bg-border-dark"
+                      >
+                        Mobile
+                      </option>
+                      <option
+                        value="Backend"
+                        className="text-white bg-border-dark"
+                      >
+                        Backend
+                      </option>
+                      <option
+                        value="Experiments"
+                        className="text-white bg-border-dark"
+                      >
+                        Experiments
+                      </option>
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-text-secondary">
                       <span className="material-symbols-outlined text-[20px]">
@@ -275,7 +292,12 @@ export function AddProjectModal({
                           {ide.name}
                         </option>
                       ))}
-                      <option value="terminal" className="text-white bg-border-dark">Terminal</option>
+                      <option
+                        value="terminal"
+                        className="text-white bg-border-dark"
+                      >
+                        Terminal
+                      </option>
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-text-secondary">
                       <span className="material-symbols-outlined text-[20px]">
@@ -351,4 +373,3 @@ export function AddProjectModal({
     </>
   );
 }
-

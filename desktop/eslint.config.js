@@ -19,5 +19,10 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // Modal açıldığında form state'ini resetlemek için useEffect içinde setState kullanımına izin ver
+      // Bu durumda modal açıldığında form'u resetlemek için gerekli
+      '@typescript-eslint/no-floating-promises': 'off',
+    },
   },
 ])

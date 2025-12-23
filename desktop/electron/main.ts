@@ -57,6 +57,13 @@ function createWindow() {
   }
 }
 
+ipcMain.handle(
+  "window:openExternal",
+  async (_event: Electron.IpcMainInvokeEvent, url: string) => {
+    await shell.openExternal(url);
+  }
+);
+
 ipcMain.handle("window:minimize", () => {
   mainWindow?.minimize();
 });
@@ -797,6 +804,106 @@ ipcMain.handle(
 );
 
 ipcMain.handle(
+  "git:getRemoteUrl",
+  async (_event: Electron.IpcMainInvokeEvent, projectPath: string) => {
+    return new Promise((resolve) => {
+      // Normalize path
+      let normalizedPath = projectPath;
+      if (projectPath.startsWith("~")) {
+        normalizedPath = path.join(homedir(), projectPath.slice(1));
+      }
+      normalizedPath = path.resolve(normalizedPath);
+
+      // Check if .git exists
+      const gitDir = path.join(normalizedPath, ".git");
+      if (!existsSync(gitDir)) {
+        resolve(null); // Not a git repository
+        return;
+      }
+
+      // Get remote URL (usually 'origin')
+      const remoteProcess = spawn(
+        "git",
+        ["config", "--get", "remote.origin.url"],
+        {
+          cwd: normalizedPath,
+          shell: process.platform === "win32",
+        }
+      );
+
+      let remoteOutput = "";
+      remoteProcess.stdout.on("data", (data: Buffer) => {
+        remoteOutput += data.toString();
+      });
+
+      remoteProcess.on("close", (code) => {
+        if (code === 0 && remoteOutput.trim()) {
+          resolve(remoteOutput.trim());
+        } else {
+          resolve(null);
+        }
+      });
+
+      remoteProcess.on("error", () => {
+        resolve(null);
+      });
+    });
+  }
+);
+
+ipcMain.handle(
+  "git:getDiff",
+  async (
+    _event: Electron.IpcMainInvokeEvent,
+    projectPath: string,
+    filePath?: string
+  ) => {
+    return new Promise((resolve) => {
+      // Normalize path
+      let normalizedPath = projectPath;
+      if (projectPath.startsWith("~")) {
+        normalizedPath = path.join(homedir(), projectPath.slice(1));
+      }
+      normalizedPath = path.resolve(normalizedPath);
+
+      // Check if .git exists
+      const gitDir = path.join(normalizedPath, ".git");
+      if (!existsSync(gitDir)) {
+        resolve(null);
+        return;
+      }
+
+      // Get diff for specific file or all files
+      const diffProcess = spawn(
+        "git",
+        filePath ? ["diff", filePath] : ["diff"],
+        {
+          cwd: normalizedPath,
+          shell: process.platform === "win32",
+        }
+      );
+
+      let diffOutput = "";
+      diffProcess.stdout.on("data", (data: Buffer) => {
+        diffOutput += data.toString();
+      });
+
+      diffProcess.on("close", (code) => {
+        if (code === 0) {
+          resolve(diffOutput || null);
+        } else {
+          resolve(null);
+        }
+      });
+
+      diffProcess.on("error", () => {
+        resolve(null);
+      });
+    });
+  }
+);
+
+ipcMain.handle(
   "git:getStatus",
   async (_event: Electron.IpcMainInvokeEvent, projectPath: string) => {
     return new Promise((resolve) => {
@@ -898,10 +1005,11 @@ ipcMain.handle(
       statusProcess.on("close", (code) => {
         if (code === 0 && statusOutput.trim()) {
           const lines = statusOutput.trim().split("\n");
-          results.pendingChanges = lines.length;
-          results.files = lines.slice(0, 10).map((line) => {
+          const uniqueFiles = new Set<string>();
+          results.files = lines.map((line) => {
             const status = line.substring(0, 2).trim();
             const fileName = line.substring(3).trim();
+            uniqueFiles.add(fileName); // Track unique files
             let fileStatus = "modified";
             if (status.startsWith("A") || status.endsWith("A")) {
               fileStatus = "added";
@@ -912,6 +1020,7 @@ ipcMain.handle(
             }
             return { name: fileName, status: fileStatus };
           });
+          results.pendingChanges = uniqueFiles.size; // Use unique file count
         }
         checkComplete();
       });

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { IDE } from "../types/Settings";
+import type { IDE } from "../../types/Settings";
 
 interface AddIDEModalProps {
   isOpen: boolean;
@@ -14,8 +14,8 @@ export function AddIDEModal({
   onSave,
   editingIDE,
 }: AddIDEModalProps) {
-  const [name, setName] = useState("");
-  const [command, setCommand] = useState("");
+  const [name, setName] = useState(editingIDE?.name || "");
+  const [command, setCommand] = useState(editingIDE?.command || "");
   const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
@@ -158,4 +158,3 @@ export function AddIDEModal({
     </>
   );
 }
-

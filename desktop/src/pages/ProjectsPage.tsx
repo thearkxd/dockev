@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sidebar } from "../components/Sidebar";
-import { Header } from "../components/Header";
-import { ProjectCard } from "../components/ProjectCard";
-import { AddProjectModal } from "../components/AddProjectModal";
-import { TitleBar } from "../components/TitleBar";
+import { Sidebar } from "../components/layout/Sidebar";
+import { Header } from "../components/layout/Header";
+import { ProjectCard } from "../components/project/ProjectCard";
+import { AddProjectModal } from "../components/modals/AddProjectModal";
+import { TitleBar } from "../components/layout/TitleBar";
 import type { Project } from "../types/Project";
 
 interface ProjectsPageProps {

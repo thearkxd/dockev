@@ -6,6 +6,7 @@ declare global {
       minimize: () => void;
       maximize: () => void;
       close: () => void;
+      openExternal: (url: string) => void;
       launch?: {
         ide: (projectPath: string, ide: string) => Promise<boolean>;
       };
@@ -26,6 +27,8 @@ declare global {
           pendingChanges: number;
           files: Array<{ name: string; status: string }>;
         } | null>;
+        getRemoteUrl: (projectPath: string) => Promise<string | null>;
+        getDiff: (projectPath: string, filePath?: string) => Promise<string | null>;
       };
     };
     dockevDialog: {

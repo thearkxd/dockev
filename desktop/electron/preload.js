@@ -15,7 +15,12 @@ contextBridge.exposeInMainWorld("dockevWindow", {
   git: {
     getStatus: (projectPath) =>
       ipcRenderer.invoke("git:getStatus", projectPath),
+    getRemoteUrl: (projectPath) =>
+      ipcRenderer.invoke("git:getRemoteUrl", projectPath),
+    getDiff: (projectPath, filePath) =>
+      ipcRenderer.invoke("git:getDiff", projectPath, filePath),
   },
+  openExternal: (url) => ipcRenderer.invoke("window:openExternal", url),
 });
 
 contextBridge.exposeInMainWorld("dockevDialog", {

@@ -3,8 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { SettingsPage } from "./pages/SettingsPage";
-import { PageTransition } from "./components/PageTransition";
-import { Spotlight } from "./components/Spotlight";
+import { PageTransition } from "./components/shared/PageTransition";
+import { Spotlight } from "./components/shared/Spotlight";
 import type { Project } from "./types/Project";
 import { storage } from "./utils/storage";
 

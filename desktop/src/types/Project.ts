@@ -3,6 +3,7 @@ import type { Module } from "./Module";
 export type ProjectConfig = {
   devServerCommand?: string; // Custom dev server command (e.g., "npm run dev", "yarn start")
   environmentVariables?: Record<string, string>; // Key-value pairs for env vars
+  techStackVersions?: Record<string, string>; // Technology name -> version mapping
 };
 
 export type Project = {

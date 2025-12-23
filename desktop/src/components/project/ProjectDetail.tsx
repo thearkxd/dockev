@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import type { Project } from "../types/Project";
-import type { Module } from "../types/Module";
+import type { Project } from "../../types/Project";
+import type { Module } from "../../types/Module";
+import { Icon } from "@iconify/react";
 
 interface ProjectDetailProps {
   project: Project;
@@ -32,6 +33,7 @@ export function ProjectDetail({
     files: Array<{ name: string; status: string }>;
   } | null>(null);
   const [isLoadingGit, setIsLoadingGit] = useState(true);
+  const [gitRemoteUrl, setGitRemoteUrl] = useState<string | null>(null);
   const [modules, setModules] = useState<Module[]>(project.modules || []);
   const [isDetectingModules, setIsDetectingModules] = useState(false);
   const [detectedModules, setDetectedModules] = useState<
@@ -84,9 +86,27 @@ export function ProjectDetail({
       }
     };
 
+    const loadGitRemoteUrl = async () => {
+      try {
+        if (window.dockevWindow?.git?.getRemoteUrl) {
+          const remoteUrl = await window.dockevWindow.git.getRemoteUrl(
+            project.path
+          );
+          setGitRemoteUrl(remoteUrl);
+        }
+      } catch (error) {
+        console.error("Error loading git remote URL:", error);
+        setGitRemoteUrl(null);
+      }
+    };
+
     loadGitStatus();
+    loadGitRemoteUrl();
     // Refresh git status every 30 seconds
-    const interval = setInterval(loadGitStatus, 30000);
+    const interval = setInterval(() => {
+      loadGitStatus();
+      loadGitRemoteUrl();
+    }, 30000);
     return () => clearInterval(interval);
   }, [project.path]);
 
@@ -225,6 +245,40 @@ export function ProjectDetail({
     // Show toast notification (can be enhanced later)
   };
 
+  // Convert git remote URL to GitHub web URL
+  const getGitHubUrl = (remoteUrl: string | null): string | null => {
+    if (!remoteUrl) return null;
+
+    // Handle SSH format: git@github.com:user/repo.git
+    let url = remoteUrl;
+    if (url.startsWith("git@")) {
+      url = url.replace("git@", "https://").replace(":", "/");
+    }
+    // Handle HTTPS format: https://github.com/user/repo.git
+    if (
+      url.startsWith("https://github.com") ||
+      url.startsWith("http://github.com")
+    ) {
+      // Remove .git suffix if present
+      url = url.replace(/\.git$/, "");
+      return url;
+    }
+    // Handle other Git hosting services (GitLab, Bitbucket, etc.)
+    // For now, only support GitHub
+    return null;
+  };
+
+  const handleOpenInGitHub = () => {
+    const githubUrl = getGitHubUrl(gitRemoteUrl);
+    if (githubUrl) {
+      if (window.dockevWindow?.openExternal) {
+        window.dockevWindow.openExternal(githubUrl);
+      } else {
+        window.open(githubUrl, "_blank");
+      }
+    }
+  };
+
   const handleRunDevServer = async () => {
     if (onRunDevServer) {
       try {
@@ -259,19 +313,19 @@ export function ProjectDetail({
 
     // Tech name to icon/color mapping
     const techConfig: Record<string, { icon: string; color: string }> = {
-      React: { icon: "code_blocks", color: "#61DAFB" },
-      "React Native / Expo": { icon: "smartphone", color: "#61DAFB" },
-      "Tailwind CSS": { icon: "brush", color: "#38B2AC" },
-      TypeScript: { icon: "data_object", color: "#3178C6" },
-      "Node.js": { icon: "dns", color: "#8CC84B" },
-      "Next.js": { icon: "web", color: "#000000" },
-      Vue: { icon: "code", color: "#4FC08D" },
-      Angular: { icon: "code", color: "#DD0031" },
-      Python: { icon: "code", color: "#3776AB" },
-      Django: { icon: "code", color: "#092E20" },
-      Flask: { icon: "code", color: "#000000" },
-      Go: { icon: "code", color: "#00ADD8" },
-      Rust: { icon: "code", color: "#000000" },
+      React: { icon: "uil:react", color: "#61DAFB" },
+      "React Native / Expo": { icon: "cib:expo", color: "#61DAFB" },
+      "Tailwind CSS": { icon: "mdi:tailwind", color: "#38B2AC" },
+      TypeScript: { icon: "lineicons:typescript", color: "#3178C6" },
+      "Node.js": { icon: "bxl:nodejs", color: "#8CC84B" },
+      "Next.js": { icon: "material-icon-theme:next", color: "#000000" },
+      Vue: { icon: "mingcute:vue-fill", color: "#4FC08D" },
+      Angular: { icon: "teenyicons:angular-outline", color: "#DD0031" },
+      Python: { icon: "akar-icons:python-fill", color: "#3776AB" },
+      Django: { icon: "akar-icons:django-fill", color: "#092E20" },
+      Flask: { icon: "mdi:flask", color: "#000000" },
+      Go: { icon: "file-icons:go", color: "#00ADD8" },
+      Rust: { icon: "teenyicons:rust-outline", color: "#000000" },
     };
 
     // Collect all unique tech stacks from modules
@@ -290,26 +344,26 @@ export function ProjectDetail({
       });
     });
 
-    // Also include project-level tags if no modules
-    if (modules.length === 0 && project.tags.length > 0) {
-      project.tags.forEach((tag) => {
-        if (!techMap.has(tag)) {
-          const config = techConfig[tag] || {
-            icon: "code",
-            color: "#6366F1",
-          };
-          techMap.set(tag, {
-            name: tag,
-            ...config,
-          });
-        }
-      });
-    }
+    // Always include project-level tags (from ManageTechStackModal)
+    project.tags.forEach((tag) => {
+      if (!techMap.has(tag)) {
+        const config = techConfig[tag] || {
+          icon: "code",
+          color: "#6366F1",
+        };
+        techMap.set(tag, {
+          name: tag,
+          ...config,
+        });
+      }
+    });
 
     return Array.from(techMap.values());
   };
 
   const techStack = getTechStackFromModules();
+  const [showAllTechs, setShowAllTechs] = useState(false);
+  const displayedTechStack = showAllTechs ? techStack : techStack.slice(0, 4);
 
   // Default git status if not available
   const displayGitStatus = gitStatus || {
@@ -400,6 +454,16 @@ export function ProjectDetail({
                 </span>
                 <span>Open Folder</span>
               </button>
+              {gitRemoteUrl && getGitHubUrl(gitRemoteUrl) && (
+                <button
+                  onClick={handleOpenInGitHub}
+                  className="flex items-center gap-2 px-4 h-10 rounded-md border border-border-dark bg-surface-dark text-white text-sm font-medium hover:bg-surface-dark/80 transition-colors"
+                  title="Open in GitHub"
+                >
+                  <Icon icon="mdi:github" width="24" height="24" />
+                  <span>Open in GitHub</span>
+                </button>
+              )}
               <button
                 onClick={handleConfig}
                 className="flex items-center gap-2 px-4 h-10 rounded-md border border-border-dark bg-surface-dark text-white text-sm font-medium hover:bg-surface-dark/80 transition-colors"
@@ -629,10 +693,22 @@ export function ProjectDetail({
                     </button>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    {techStack.map((tech) => (
+                    {displayedTechStack.map((tech) => (
                       <div
                         key={tech.name}
-                        className="flex flex-col p-4 rounded-xl border border-border-dark bg-surface-dark hover:border-primary/30 transition-colors group"
+                        className="flex flex-col p-4 rounded-xl border border-border-dark bg-surface-dark transition-all group"
+                        style={
+                          {
+                            borderColor: "rgb(39, 39, 42)", // border-border-dark default
+                            "--tech-color": tech.color,
+                          } as React.CSSProperties & { "--tech-color": string }
+                        }
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = tech.color;
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = "rgb(39, 39, 42)";
+                        }}
                       >
                         <div className="flex items-start justify-between mb-3">
                           <div
@@ -642,14 +718,17 @@ export function ProjectDetail({
                               color: tech.color,
                             }}
                           >
-                            <span className="material-symbols-outlined text-[24px]">
-                              {tech.icon}
-                            </span>
+                            <Icon icon={tech.icon} width="24" height="24" />
                           </div>
                         </div>
                         <span className="text-sm font-semibold text-white">
                           {tech.name}
                         </span>
+                        {project.config?.techStackVersions?.[tech.name] && (
+                          <span className="text-xs font-mono text-primary mt-0.5">
+                            {project.config.techStackVersions[tech.name]}
+                          </span>
+                        )}
                         <span className="text-xs text-text-secondary mt-1">
                           {tech.name === "React" && "Frontend Framework"}
                           {tech.name === "React Native / Expo" &&
@@ -669,6 +748,25 @@ export function ProjectDetail({
                       </div>
                     ))}
                   </div>
+                  {techStack.length > 4 && (
+                    <button
+                      onClick={() => setShowAllTechs(!showAllTechs)}
+                      className="text-sm text-primary hover:text-primary-hover font-medium flex items-center justify-center gap-2 py-2 transition-colors"
+                    >
+                      <span>
+                        {showAllTechs
+                          ? "Show Less"
+                          : `Show All (${techStack.length - 4} more)`}
+                      </span>
+                      <span
+                        className={`material-symbols-outlined text-[18px] transition-transform ${
+                          showAllTechs ? "rotate-180" : ""
+                        }`}
+                      >
+                        expand_more
+                      </span>
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -712,54 +810,68 @@ export function ProjectDetail({
                           </span>
                         </div>
                       </div>
-                      {displayGitStatus.pendingChanges > 0 && (
-                        <div className="flex items-center gap-4">
-                          <div className="flex -space-x-2">
-                            <div className="size-6 rounded-full ring-2 ring-background-dark bg-gray-300"></div>
-                            <div className="size-6 rounded-full ring-2 ring-background-dark bg-gray-400"></div>
+                      <div className="flex items-center gap-3">
+                        {displayGitStatus.pendingChanges > 0 && (
+                          <div className="flex items-center gap-4">
+                            <div className="flex -space-x-2">
+                              <div className="size-6 rounded-full ring-2 ring-background-dark bg-gray-300"></div>
+                              <div className="size-6 rounded-full ring-2 ring-background-dark bg-gray-400"></div>
+                            </div>
+                            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-500 border border-orange-500/20">
+                              {displayGitStatus.pendingChanges} pending
+                            </span>
                           </div>
-                          <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-500 border border-orange-500/20">
-                            {displayGitStatus.pendingChanges} pending
-                          </span>
-                        </div>
-                      )}
+                        )}
+                        {displayGitStatus.files.length > 0 && (
+                          <button
+                            onClick={handleViewAllChanges}
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 text-xs font-medium transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">
+                              code
+                            </span>
+                            <span>View Diff</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                     {displayGitStatus.files.length > 0 && (
                       <>
                         <div className="divide-y divide-border-dark">
-                          {displayGitStatus.files.map((file, index) => (
-                            <div
-                              key={index}
-                              className="flex items-center justify-between p-3 px-4 hover:bg-surface-dark/30 transition-colors group"
-                            >
-                              <div className="flex items-center gap-3">
-                                <span
-                                  className={`material-symbols-outlined text-[16px] w-4 ${
-                                    file.status === "added"
-                                      ? "text-green-500"
+                          {displayGitStatus.files
+                            .slice(0, 10)
+                            .map((file, index) => (
+                              <div
+                                key={index}
+                                className="flex items-center justify-between p-3 px-4 hover:bg-surface-dark/30 transition-colors group"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <span
+                                    className={`material-symbols-outlined text-[16px] w-4 ${
+                                      file.status === "added"
+                                        ? "text-green-500"
+                                        : file.status === "deleted"
+                                        ? "text-red-500"
+                                        : "text-yellow-500"
+                                    }`}
+                                  >
+                                    {file.status === "added"
+                                      ? "add"
                                       : file.status === "deleted"
-                                      ? "text-red-500"
-                                      : "text-yellow-500"
-                                  }`}
-                                >
-                                  {file.status === "added"
-                                    ? "add"
-                                    : file.status === "deleted"
-                                    ? "delete"
-                                    : "edit"}
-                                </span>
-                                <span className="text-sm text-gray-300 font-mono group-hover:text-primary transition-colors truncate flex-1">
-                                  {file.name}
+                                      ? "delete"
+                                      : "edit"}
+                                  </span>
+                                  <span className="text-sm text-gray-300 font-mono group-hover:text-primary transition-colors truncate flex-1">
+                                    {file.name}
+                                  </span>
+                                </div>
+                                <span className="text-xs text-text-secondary opacity-0 group-hover:opacity-100 transition-opacity capitalize ml-2">
+                                  {file.status}
                                 </span>
                               </div>
-                              <span className="text-xs text-text-secondary opacity-0 group-hover:opacity-100 transition-opacity capitalize ml-2">
-                                {file.status}
-                              </span>
-                            </div>
-                          ))}
+                            ))}
                         </div>
-                        {displayGitStatus.pendingChanges >
-                          displayGitStatus.files.length && (
+                        {displayGitStatus.files.length > 10 && (
                           <div className="bg-surface-dark/30 p-2 text-center border-t border-border-dark">
                             <button
                               onClick={handleViewAllChanges}
@@ -807,9 +919,17 @@ export function ProjectDetail({
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     <div className="flex items-center gap-3 relative z-10">
-                      <span className="material-symbols-outlined text-[24px]">
-                        code
-                      </span>
+                      <Icon
+                        icon={
+                          project.defaultIde === "vscode"
+                            ? "simple-icons:vscode"
+                            : project.defaultIde === "cursor"
+                            ? "material-icon-theme:cursor"
+                            : "simple-icons:webstorm"
+                        }
+                        width="24"
+                        height="24"
+                      />
                       <div className="flex flex-col items-start">
                         <span className="text-sm font-bold">
                           Open in{" "}
@@ -833,9 +953,11 @@ export function ProjectDetail({
                       onClick={() => onOpenIDE(project.path, "cursor")}
                       className="flex flex-col items-center justify-center gap-2 p-3 rounded-lg border border-border-dark bg-surface-dark hover:bg-surface-dark/80 transition-all group"
                     >
-                      <span className="material-symbols-outlined text-[20px] text-text-secondary group-hover:text-white">
-                        edit_square
-                      </span>
+                      <Icon
+                        icon="material-icon-theme:cursor"
+                        width="32"
+                        height="32"
+                      />
                       <span className="text-xs font-medium text-text-secondary group-hover:text-white">
                         Cursor
                       </span>
@@ -844,9 +966,11 @@ export function ProjectDetail({
                       onClick={() => onOpenIDE(project.path, "webstorm")}
                       className="flex flex-col items-center justify-center gap-2 p-3 rounded-lg border border-border-dark bg-surface-dark hover:bg-surface-dark/80 transition-all group"
                     >
-                      <span className="material-symbols-outlined text-[20px] text-text-secondary group-hover:text-white">
-                        laptop_chromebook
-                      </span>
+                      <Icon
+                        icon="simple-icons:webstorm"
+                        width="24"
+                        height="24"
+                      />
                       <span className="text-xs font-medium text-text-secondary group-hover:text-white">
                         WebStorm
                       </span>

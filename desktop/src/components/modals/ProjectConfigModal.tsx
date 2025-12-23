@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { Project, ProjectConfig } from "../types/Project";
+import type { Project, ProjectConfig } from "../../types/Project";
 
 interface ProjectConfigModalProps {
   isOpen: boolean;
@@ -22,9 +22,7 @@ export function ProjectConfigModal({
   const [devServerCommand, setDevServerCommand] = useState(
     project.config?.devServerCommand || ""
   );
-  const [envVars, setEnvVars] = useState<
-    Array<{ key: string; value: string }>
-  >(
+  const [envVars, setEnvVars] = useState<Array<{ key: string; value: string }>>(
     project.config?.environmentVariables
       ? Object.entries(project.config.environmentVariables).map(([k, v]) => ({
           key: k,
@@ -37,20 +35,25 @@ export function ProjectConfigModal({
   // Reset form when modal opens/closes
   useEffect(() => {
     if (isOpen) {
-      setName(project.name);
-      setCategory(project.category);
-      setDefaultIde(project.defaultIde);
-      setTags(project.tags);
-      setDevServerCommand(project.config?.devServerCommand || "");
-      setEnvVars(
-        project.config?.environmentVariables
-          ? Object.entries(project.config.environmentVariables).map(([k, v]) => ({
-              key: k,
-              value: v,
-            }))
-          : []
-      );
-      setIsAnimating(true);
+      // Use setTimeout to avoid synchronous setState in effect
+      setTimeout(() => {
+        setName(project.name);
+        setCategory(project.category);
+        setDefaultIde(project.defaultIde);
+        setTags(project.tags);
+        setDevServerCommand(project.config?.devServerCommand || "");
+        setEnvVars(
+          project.config?.environmentVariables
+            ? Object.entries(project.config.environmentVariables).map(
+                ([k, v]) => ({
+                  key: k,
+                  value: v,
+                })
+              )
+            : []
+        );
+        setIsAnimating(true);
+      }, 0);
     } else {
       setIsAnimating(false);
     }
@@ -109,15 +112,12 @@ export function ProjectConfigModal({
       devServerCommand: devServerCommand.trim() || undefined,
       environmentVariables:
         envVars.length > 0 && envVars.some((e) => e.key && e.value)
-          ? envVars.reduce(
-              (acc, { key, value }) => {
-                if (key && value) {
-                  acc[key] = value;
-                }
-                return acc;
-              },
-              {} as Record<string, string>
-            )
+          ? envVars.reduce((acc, { key, value }) => {
+              if (key && value) {
+                acc[key] = value;
+              }
+              return acc;
+            }, {} as Record<string, string>)
           : undefined,
     };
 
@@ -386,4 +386,3 @@ export function ProjectConfigModal({
     </>
   );
 }
-

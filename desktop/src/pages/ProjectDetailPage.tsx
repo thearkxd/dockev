@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ProjectDetail } from "../components/ProjectDetail";
-import { TitleBar } from "../components/TitleBar";
-import { ProjectConfigModal } from "../components/ProjectConfigModal";
+import { ProjectDetail } from "../components/project/ProjectDetail";
+import { TitleBar } from "../components/layout/TitleBar";
+import { ProjectConfigModal } from "../components/modals/ProjectConfigModal";
+import { ManageTechStackModal } from "../components/modals/ManageTechStackModal";
+import { ViewAllChangesModal } from "../components/modals/ViewAllChangesModal";
 import type { Project } from "../types/Project";
 
 interface ProjectDetailPageProps {
@@ -21,6 +23,16 @@ export function ProjectDetailPage({
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [isTechStackModalOpen, setIsTechStackModalOpen] = useState(false);
+  const [isViewAllChangesModalOpen, setIsViewAllChangesModalOpen] =
+    useState(false);
+  const [gitStatus, setGitStatus] = useState<{
+    branch: string;
+    lastCommit: string;
+    lastCommitTime: string;
+    pendingChanges: number;
+    files: Array<{ name: string; status: string }>;
+  } | null>(null);
 
   const project = projects.find((p) => p.id === id);
 
@@ -82,13 +94,24 @@ export function ProjectDetailPage({
   };
 
   const handleManageTechStack = () => {
-    // TODO: Open tech stack management modal
-    alert("Tech stack management will be available soon!");
+    setIsTechStackModalOpen(true);
   };
 
-  const handleViewAllChanges = () => {
-    // TODO: Show git changes in a modal or new view
-    alert("Viewing all git changes will be available soon!");
+  const handleSaveTechStack = (updates: Partial<Project>) => {
+    onUpdateProject(project.id, updates);
+  };
+
+  const handleViewAllChanges = async () => {
+    // Load git status if not already loaded
+    if (!gitStatus && window.dockevWindow?.git?.getStatus) {
+      try {
+        const status = await window.dockevWindow.git.getStatus(project.path);
+        setGitStatus(status);
+      } catch (error) {
+        console.error("Error loading git status:", error);
+      }
+    }
+    setIsViewAllChangesModalOpen(true);
   };
 
   return (
@@ -120,6 +143,18 @@ export function ProjectDetailPage({
         project={project}
         onClose={() => setIsConfigModalOpen(false)}
         onSave={handleSaveConfig}
+      />
+      <ManageTechStackModal
+        isOpen={isTechStackModalOpen}
+        project={project}
+        onClose={() => setIsTechStackModalOpen(false)}
+        onSave={handleSaveTechStack}
+      />
+      <ViewAllChangesModal
+        isOpen={isViewAllChangesModalOpen}
+        project={project}
+        gitStatus={gitStatus}
+        onClose={() => setIsViewAllChangesModalOpen(false)}
       />
     </>
   );

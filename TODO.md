@@ -65,18 +65,18 @@
 #### 1. Placeholder Butonların İşlevselliği
 
 - [x] **Config Butonu**: Proje konfigürasyon modalı
-  - Proje ayarları düzenleme
-  - Default IDE seçimi
-  - Dev server komutları özelleştirme
-  - Environment variables yönetimi
-- [ ] **Manage Tech Stack Butonu**: Technology stack yönetim modalı
-  - Teknoloji ekleme/kaldırma
-  - Versiyon bilgileri güncelleme
-  - Custom teknoloji ekleme
+  - [x] Proje ayarları düzenleme
+  - [x] Default IDE seçimi
+  - [x] Dev server komutları özelleştirme
+  - [x] Environment variables yönetimi
+- [x] **Manage Tech Stack Butonu**: Technology stack yönetim modalı
+  - [x] Teknoloji ekleme/kaldırma
+  - [x] Versiyon bilgileri güncelleme
+  - [x] Custom teknoloji ekleme
 - [ ] **View All Changes Butonu**: Git değişikliklerini detaylı göster
-  - Tüm değişen dosyaları listele
-  - Diff görüntüleme
-  - Commit yapma özelliği (opsiyonel)
+  - [ ] Tüm değişen dosyaları listele
+  - [ ] Diff görüntüleme
+  - [ ] Commit yapma özelliği (opsiyonel)
 
 #### 2. Veri Kalıcılığı
 

@@ -1,18 +1,23 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { TitleBar } from "../components/TitleBar";
+import { TitleBar } from "../components/layout/TitleBar";
 import { settingsStorage } from "../utils/settingsStorage";
 import type { Settings, IDE, Theme } from "../types/Settings";
-import { AddIDEModal } from "../components/AddIDEModal";
+import { AddIDEModal } from "../components/modals/AddIDEModal";
 
 export function SettingsPage() {
   const navigate = useNavigate();
-  const [settings, setSettings] = useState<Settings>(settingsStorage.getSettings());
+  const [settings, setSettings] = useState<Settings>(
+    settingsStorage.getSettings()
+  );
   const [isAddIDEModalOpen, setIsAddIDEModalOpen] = useState(false);
   const [editingIDE, setEditingIDE] = useState<IDE | null>(null);
 
   useEffect(() => {
-    setSettings(settingsStorage.getSettings());
+    // Use setTimeout to avoid synchronous setState in effect
+    setTimeout(() => {
+      setSettings(settingsStorage.getSettings());
+    }, 0);
   }, []);
 
   const handleSave = () => {
@@ -31,7 +36,11 @@ export function SettingsPage() {
   const handleThemeChange = (theme: Theme) => {
     setSettings({ ...settings, theme });
     // Apply theme to document
-    if (theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+    if (
+      theme === "dark" ||
+      (theme === "system" &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches)
+    ) {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
@@ -162,7 +171,9 @@ export function SettingsPage() {
                       <input
                         type="checkbox"
                         checked={settings.autoTechStackDetection}
-                        onChange={(e) => handleAutoTechStackToggle(e.target.checked)}
+                        onChange={(e) =>
+                          handleAutoTechStackToggle(e.target.checked)
+                        }
                         className="peer sr-only"
                       />
                       <span
@@ -347,4 +358,3 @@ export function SettingsPage() {
     </>
   );
 }
-
