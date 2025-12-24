@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { SettingsPage } from "./pages/SettingsPage";
@@ -7,6 +8,7 @@ import { PageTransition } from "./components/shared/PageTransition";
 import { Spotlight } from "./components/shared/Spotlight";
 import type { Project } from "./types/Project";
 import { storage } from "./utils/storage";
+import { getProjectColor } from "./utils/colorUtils";
 
 export default function App() {
   console.log("App component rendering...");
@@ -80,6 +82,14 @@ export default function App() {
     color?: string;
     description?: string;
   }) => {
+    // Get existing project colors to avoid duplicates
+    const existingColors = projects
+      .map((p) => p.color)
+      .filter((c): c is string => !!c);
+    
+    // Use provided color or generate a random one
+    const projectColor = getProjectColor(projectData.color, existingColors);
+    
     const newProject: Project = {
       id: Date.now().toString(),
       name: projectData.name,
@@ -88,7 +98,7 @@ export default function App() {
       tags: projectData.tags,
       defaultIde: projectData.defaultIde as "vscode" | "cursor" | "webstorm",
       lastOpenedAt: undefined,
-      color: projectData.color,
+      color: projectColor,
       description: projectData.description,
     };
     const updatedProjects = [...projects, newProject];
@@ -198,6 +208,29 @@ export default function App() {
           isOpen={isSpotlightOpen}
           onClose={() => setIsSpotlightOpen(false)}
           projects={projects}
+        />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: "#1a1a1a",
+              color: "#fff",
+              border: "1px solid rgba(255, 255, 255, 0.1)",
+            },
+            success: {
+              iconTheme: {
+                primary: "#10b981",
+                secondary: "#fff",
+              },
+            },
+            error: {
+              iconTheme: {
+                primary: "#ef4444",
+                secondary: "#fff",
+              },
+            },
+          }}
         />
       </div>
     </BrowserRouter>

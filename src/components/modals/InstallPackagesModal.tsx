@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 
 interface InstallPackagesModalProps {
   isOpen: boolean;
@@ -60,12 +61,19 @@ export function InstallPackagesModal({
     try {
       console.log("Modal - Calling onInstall with modulePath:", modulePath);
       await onInstall(selectedPackageManager, modulePath);
+      toast.success(
+        `Dependencies installed successfully using ${selectedPackageManager}!${
+          moduleName ? ` (${moduleName})` : ""
+        }`
+      );
       setTimeout(() => {
         onClose();
       }, 1000);
     } catch (error) {
       console.error("Error installing packages:", error);
-    } finally {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to install dependencies";
+      toast.error(`Failed to install dependencies: ${errorMessage}`);
       setIsInstalling(false);
     }
   };

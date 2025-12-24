@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import type { Module } from "../../types/Module";
 
 interface MergeModulesModalProps {
@@ -43,7 +44,12 @@ export function MergeModulesModal({
 
   const handleMerge = () => {
     if (sourceModuleId && targetModuleId && sourceModuleId !== targetModuleId) {
+      const sourceModule = modules.find((m) => m.id === sourceModuleId);
+      const targetModule = modules.find((m) => m.id === targetModuleId);
       onMerge(sourceModuleId, targetModuleId);
+      toast.success(
+        `Module "${sourceModule?.name}" merged into "${targetModule?.name}" successfully!`
+      );
       onClose();
     }
   };

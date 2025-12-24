@@ -49,9 +49,6 @@ function createWindow() {
       console.error("Error loading URL:", error);
     });
 
-    // Open DevTools in development
-    mainWindow.webContents.openDevTools();
-
     // Log when page finishes loading
     mainWindow.webContents.on("did-finish-load", () => {
       console.log("Page finished loading");

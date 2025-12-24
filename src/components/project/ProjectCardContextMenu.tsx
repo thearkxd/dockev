@@ -10,6 +10,7 @@ interface ProjectCardContextMenuProps {
   onOpen: () => void | Promise<void>;
   onOpenIn: (ide: string) => void | Promise<void>;
   onRevealInExplorer: () => void | Promise<void>;
+  onEditProject: (projectId: string) => void | Promise<void>;
   onOpenInGitHub?: () => void | Promise<void>;
   onArchive: () => void;
   onDelete: () => void;
@@ -25,6 +26,7 @@ export function ProjectCardContextMenu({
   onOpen,
   onOpenIn,
   onRevealInExplorer,
+  onEditProject,
   onOpenInGitHub,
   onArchive,
   onDelete,
@@ -166,6 +168,20 @@ export function ProjectCardContextMenu({
             folder_open
           </span>
           <span>Reveal in Explorer</span>
+        </button>
+
+        {/* Reveal in Explorer */}
+        <button
+          onClick={async () => {
+            await onEditProject(project.id);
+            onClose();
+          }}
+          className="w-full flex items-center gap-3 px-4 py-2 text-sm text-white hover:bg-white/5 transition-colors text-left"
+        >
+          <span className="material-symbols-outlined text-[18px] text-text-secondary">
+            edit
+          </span>
+          <span>Edit Project</span>
         </button>
 
         {/* Open in GitHub */}

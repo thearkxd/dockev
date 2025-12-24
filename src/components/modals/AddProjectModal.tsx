@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import { settingsStorage } from "../../utils/settingsStorage";
+import { DEFAULT_COLOR_PALETTE, getRandomColor } from "../../utils/colorUtils";
 
 interface AddProjectModalProps {
   isOpen: boolean;
@@ -27,6 +29,7 @@ export function AddProjectModal({
     settingsStorage.getSettings().defaultIde || "vscode"
   );
   const [availableIDEs] = useState(() => settingsStorage.getAllIDEs());
+  const [categories] = useState(() => settingsStorage.getCategories());
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [color, setColor] = useState<string>("");
@@ -34,26 +37,15 @@ export function AddProjectModal({
   const [errors, setErrors] = useState<{ name?: string; path?: string }>({});
   const [isAnimating, setIsAnimating] = useState(false);
 
-  // Predefined color palette
-  const colorPalette = [
-    "#6366F1", // indigo
-    "#8B5CF6", // purple
-    "#EC4899", // pink
-    "#F43F5E", // rose
-    "#EF4444", // red
-    "#F59E0B", // amber
-    "#10B981", // emerald
-    "#06B6D4", // cyan
-    "#3B82F6", // blue
-    "#14B8A6", // teal
-    "#F97316", // orange
-    "#84CC16", // lime
-  ];
+  // Use color palette from utils
+  const colorPalette = DEFAULT_COLOR_PALETTE;
 
   // Reset form when modal closes
   useEffect(() => {
     if (isOpen) {
       setIsAnimating(true);
+      // Set a random color when modal opens (user can change it)
+      setColor(getRandomColor());
     } else {
       setName("");
       setPath("");
@@ -133,9 +125,11 @@ export function AddProjectModal({
       category,
       defaultIde,
       tags,
+      // Pass empty string if color is not set, App.tsx will handle random color
       color: color.trim() || undefined,
       description: description.trim() || undefined,
     });
+    toast.success(`Project "${name.trim()}" added successfully!`);
     onClose();
   };
 
@@ -267,27 +261,20 @@ export function AddProjectModal({
                       onChange={(e) => setCategory(e.target.value)}
                       className="w-full appearance-none rounded-lg border border-border-dark bg-white/5 px-4 py-3 pr-10 text-sm text-white transition-all focus:border-primary focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-primary/20"
                     >
-                      <option value="Web" className="text-white bg-border-dark">
-                        Web
+                      <option value="" className="text-white bg-border-dark">
+                        Select category...
                       </option>
-                      <option
-                        value="Mobile"
-                        className="text-white bg-border-dark"
-                      >
-                        Mobile
-                      </option>
-                      <option
-                        value="Backend"
-                        className="text-white bg-border-dark"
-                      >
-                        Backend
-                      </option>
-                      <option
-                        value="Experiments"
-                        className="text-white bg-border-dark"
-                      >
-                        Experiments
-                      </option>
+                      {categories
+                        .filter((cat) => cat.id !== "archived")
+                        .map((cat) => (
+                          <option
+                            key={cat.id}
+                            value={cat.name}
+                            className="text-white bg-border-dark"
+                          >
+                            {cat.name}
+                          </option>
+                        ))}
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-text-secondary">
                       <span className="material-symbols-outlined text-[20px]">

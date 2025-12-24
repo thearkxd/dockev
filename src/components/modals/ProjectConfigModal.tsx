@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import type { Project, ProjectConfig } from "../../types/Project";
+import { DEFAULT_COLOR_PALETTE } from "../../utils/colorUtils";
+import { settingsStorage } from "../../utils/settingsStorage";
 
 interface ProjectConfigModalProps {
   isOpen: boolean;
@@ -25,21 +28,8 @@ export function ProjectConfigModal({
     project.config?.devServerCommand || ""
   );
 
-  // Predefined color palette
-  const colorPalette = [
-    "#6366F1", // indigo
-    "#8B5CF6", // purple
-    "#EC4899", // pink
-    "#F43F5E", // rose
-    "#EF4444", // red
-    "#F59E0B", // amber
-    "#10B981", // emerald
-    "#06B6D4", // cyan
-    "#3B82F6", // blue
-    "#14B8A6", // teal
-    "#F97316", // orange
-    "#84CC16", // lime
-  ];
+  // Use color palette from utils
+  const colorPalette = DEFAULT_COLOR_PALETTE;
   const [envVars, setEnvVars] = useState<Array<{ key: string; value: string }>>(
     project.config?.environmentVariables
       ? Object.entries(project.config.environmentVariables).map(([k, v]) => ({
@@ -49,6 +39,7 @@ export function ProjectConfigModal({
       : []
   );
   const [isAnimating, setIsAnimating] = useState(false);
+  const categories = settingsStorage.getCategories();
 
   // Reset form when modal opens/closes
   useEffect(() => {
@@ -150,6 +141,7 @@ export function ProjectConfigModal({
       description: description.trim() || undefined,
       config: Object.keys(config).length > 0 ? config : undefined,
     });
+    toast.success(`Project "${name.trim()}" updated successfully!`);
     onClose();
   };
 
@@ -238,13 +230,31 @@ export function ProjectConfigModal({
                 <label className="block text-sm font-medium text-white mb-2">
                   Category
                 </label>
-                <input
-                  type="text"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full rounded-lg border border-border-dark bg-background-dark/50 px-4 py-3 text-sm text-white placeholder-text-secondary/60 transition-all focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-                  placeholder="e.g., Web, Mobile, Backend"
-                />
+                <div className="relative">
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full appearance-none rounded-lg border border-border-dark bg-background-dark/50 px-4 py-3 pr-10 text-sm text-white transition-all focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                  >
+                    <option value="" className="text-white bg-border-dark">
+                      Select category...
+                    </option>
+                    {categories.map((cat) => (
+                      <option
+                        key={cat.id}
+                        value={cat.name}
+                        className="text-white bg-border-dark"
+                      >
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-text-secondary">
+                    <span className="material-symbols-outlined text-[20px]">
+                      expand_more
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* Default IDE */}

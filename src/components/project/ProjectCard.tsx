@@ -9,6 +9,7 @@ interface ProjectCardProps {
   onOpenIDE?: (projectPath: string, ide: string) => Promise<void>;
   onRevealInExplorer?: (projectPath: string) => Promise<void>;
   onArchive?: (projectId: string) => void;
+  onEditProject?: (projectId: string) => void;
   onDelete?: (projectId: string) => void;
 }
 
@@ -17,6 +18,7 @@ export const ProjectCard = ({
   onClick,
   onOpenIDE,
   onRevealInExplorer,
+  onEditProject,
   onArchive,
   onDelete,
 }: ProjectCardProps) => {
@@ -215,6 +217,12 @@ export const ProjectCard = ({
     }
   };
 
+  const handleEditProject = async () => {
+    if (onEditProject) {
+      await onEditProject(project.id);
+    }
+  };
+
   const handleArchive = () => {
     if (onArchive) {
       onArchive(project.id);
@@ -369,6 +377,7 @@ export const ProjectCard = ({
         onOpen={handleOpen}
         onOpenIn={handleOpenIn}
         onRevealInExplorer={handleRevealInExplorer}
+        onEditProject={handleEditProject}
         onOpenInGitHub={handleOpenInGitHub}
         onArchive={handleArchive}
         onDelete={handleDelete}

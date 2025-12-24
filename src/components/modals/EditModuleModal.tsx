@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import type { Module } from "../../types/Module";
 
 interface EditModuleModalProps {
@@ -54,6 +55,7 @@ export function EditModuleModal({
     };
 
     onSave(updatedModule);
+    toast.success(`Module "${name.trim()}" updated successfully!`);
     onClose();
   };
 

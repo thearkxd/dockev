@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import type { Project } from "../../types/Project";
 
 interface TechStackItem {
@@ -117,7 +118,7 @@ export function ManageTechStackModal({
 
     // Check if tech already exists
     if (techStack.some((tech) => tech.name === trimmedName)) {
-      alert("This technology is already in the stack.");
+      toast.error("This technology is already in the stack.");
       return;
     }
 
@@ -130,10 +131,12 @@ export function ManageTechStackModal({
     setTechStack([...techStack, newTech]);
     setNewTechName("");
     setNewTechVersion("");
+    toast.success(`Technology "${trimmedName}" added to stack!`);
   };
 
   const handleRemoveTech = (techName: string) => {
     setTechStack(techStack.filter((tech) => tech.name !== techName));
+    toast.success(`Technology "${techName}" removed from stack!`);
   };
 
   const handleUpdateVersion = (techName: string, version: string) => {
@@ -165,6 +168,7 @@ export function ManageTechStackModal({
       },
     });
 
+    toast.success("Technology stack updated successfully!");
     onClose();
   };
 

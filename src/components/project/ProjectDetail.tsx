@@ -582,7 +582,7 @@ export function ProjectDetail({
   };
 
   // Get project color or use default primary
-  const projectColor = project.color || "#6366F1"; // Default indigo
+  const projectColor = project.color || "#6366F1"; // Default indigo (fallback)
 
   // Helper function to get color with opacity
   const getColorWithOpacity = (opacity: number): string => {

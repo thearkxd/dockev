@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import type { IDE } from "../../types/Settings";
 
 interface AddIDEModalProps {
@@ -35,7 +36,7 @@ export function AddIDEModal({
 
   const handleSave = () => {
     if (!name.trim() || !command.trim()) {
-      alert("Please fill in all fields");
+      toast.error("Please fill in all fields");
       return;
     }
 
@@ -46,6 +47,12 @@ export function AddIDEModal({
     };
 
     onSave(ide);
+    toast.success(
+      editingIDE
+        ? `IDE "${name.trim()}" updated successfully!`
+        : `IDE "${name.trim()}" added successfully!`
+    );
+    onClose();
   };
 
   if (!isOpen) return null;

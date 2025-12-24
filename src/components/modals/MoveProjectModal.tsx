@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import toast from "react-hot-toast";
 import type { Project } from "../../types/Project";
 
 interface MoveProjectModalProps {
@@ -134,15 +135,18 @@ export function MoveProjectModal({
 
         if (result.success && result.newPath) {
           setProgress({ phase: "complete" });
+          toast.success(`Project moved successfully to ${result.newPath}`);
           setTimeout(() => {
             onMoveComplete(result.newPath!);
             onClose();
           }, 1000);
         } else {
+          const errorMsg = result.error || "Unknown error";
           setProgress({
             phase: "error",
-            error: result.error || "Unknown error",
+            error: errorMsg,
           });
+          toast.error(`Failed to move project: ${errorMsg}`);
           setIsMoving(false);
         }
       } else {
@@ -154,11 +158,13 @@ export function MoveProjectModal({
         window.dockevProject.removeMoveProgressListener();
       }
       console.error("Error moving project:", error);
+      const errorMsg =
+        error instanceof Error ? error.message : "Failed to move project";
       setProgress({
         phase: "error",
-        error:
-          error instanceof Error ? error.message : "Failed to move project",
+        error: errorMsg,
       });
+      toast.error(`Failed to move project: ${errorMsg}`);
       setIsMoving(false);
     }
   };

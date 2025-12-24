@@ -91,11 +91,6 @@ export function TitleBar({
 
         {showActions && (
           <div className="flex items-center gap-1 pl-2">
-            <button className="flex items-center justify-center rounded-md size-8 hover:bg-surface-dark text-text-secondary hover:text-white transition-colors">
-              <span className="material-symbols-outlined text-[20px]">
-                notifications
-              </span>
-            </button>
             <button
               onClick={() => navigate("/settings")}
               className="flex items-center justify-center rounded-md size-8 hover:bg-surface-dark text-text-secondary hover:text-white transition-colors"
@@ -105,7 +100,6 @@ export function TitleBar({
                 settings
               </span>
             </button>
-            <div className="size-8 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 ml-2 ring-2 ring-background-dark"></div>
           </div>
         )}
 

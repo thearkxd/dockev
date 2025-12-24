@@ -1,3 +1,5 @@
+import type { Category } from "./Category";
+
 export type Theme = "dark" | "light" | "system";
 
 export type IDE = {
@@ -13,11 +15,6 @@ export type Settings = {
   theme: Theme;
   customIdes: IDE[];
   defaultPackageManager?: "npm" | "yarn" | "pnpm";
-  categories: Array<{
-    id: string;
-    name: string;
-    icon: string;
-    color: string;
-  }>;
+  categories: Category[];
 };
 

@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import { TitleBar } from "../components/layout/TitleBar";
 import { settingsStorage } from "../utils/settingsStorage";
 import type { Settings, IDE, Theme } from "../types/Settings";
+import type { Category } from "../types/Category";
 import { AddIDEModal } from "../components/modals/AddIDEModal";
+import { CategoryModal } from "../components/modals/CategoryModal";
 
 export function SettingsPage() {
   const navigate = useNavigate();
@@ -12,6 +15,8 @@ export function SettingsPage() {
   );
   const [isAddIDEModalOpen, setIsAddIDEModalOpen] = useState(false);
   const [editingIDE, setEditingIDE] = useState<IDE | null>(null);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
   useEffect(() => {
     // Use setTimeout to avoid synchronous setState in effect
@@ -88,6 +93,82 @@ export function SettingsPage() {
       };
       setSettings(updatedSettings);
       settingsStorage.saveSettings(updatedSettings);
+    }
+  };
+
+  const handleAddCategory = (category: Category) => {
+    const updatedSettings = {
+      ...settings,
+      categories: [...settings.categories, category],
+    };
+    setSettings(updatedSettings);
+    settingsStorage.saveSettings(updatedSettings);
+    setIsCategoryModalOpen(false);
+    setEditingCategory(null);
+  };
+
+  const handleEditCategory = (categoryId: string) => {
+    const category = settings.categories.find((c) => c.id === categoryId);
+    if (category) {
+      setEditingCategory(category);
+      setIsCategoryModalOpen(true);
+    }
+  };
+
+  const handleUpdateCategory = (updatedCategory: Category) => {
+    const updatedSettings = {
+      ...settings,
+      categories: settings.categories.map((cat) =>
+        cat.id === updatedCategory.id ? updatedCategory : cat
+      ),
+    };
+    setSettings(updatedSettings);
+    settingsStorage.saveSettings(updatedSettings);
+    setIsCategoryModalOpen(false);
+    setEditingCategory(null);
+  };
+
+  const handleDeleteCategory = (categoryId: string) => {
+    // Check if category is used by any projects
+    const { storage } = require("../utils/storage");
+    const projects = storage.getProjects();
+    const category = settings.categories.find((c) => c.id === categoryId);
+    const isUsed = projects.some(
+      (p: { category: string }) => p.category === category?.name
+    );
+
+    if (isUsed) {
+      toast.error(
+        `Cannot delete "${category?.name}" because it's used by one or more projects.`
+      );
+      return;
+    }
+
+    if (confirm(`Are you sure you want to delete "${category?.name}"?`)) {
+      const updatedSettings = {
+        ...settings,
+        categories: settings.categories.filter((c) => c.id !== categoryId),
+      };
+      setSettings(updatedSettings);
+      settingsStorage.saveSettings(updatedSettings);
+      toast.success(`Category "${category?.name}" deleted!`);
+    }
+  };
+
+  const handleResetCategories = () => {
+    if (
+      confirm(
+        "Are you sure you want to reset categories to defaults? This will remove all custom categories."
+      )
+    ) {
+      const defaultCategories = settingsStorage.getDefaultCategories();
+      const updatedSettings = {
+        ...settings,
+        categories: defaultCategories,
+      };
+      setSettings(updatedSettings);
+      settingsStorage.saveSettings(updatedSettings);
+      toast.success("Categories reset to defaults!");
     }
   };
 
@@ -300,6 +381,96 @@ export function SettingsPage() {
               </div>
             </section>
 
+            {/* Categories Section */}
+            <section className="flex flex-col gap-5">
+              <div className="flex items-center justify-between">
+                <h3 className="text-white text-lg font-semibold tracking-tight flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary">
+                    category
+                  </span>
+                  Categories
+                </h3>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleResetCategories}
+                    className="text-text-secondary text-sm font-medium hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-surface-dark transition-colors"
+                    title="Reset to defaults"
+                  >
+                    <span className="material-symbols-outlined text-lg">
+                      refresh
+                    </span>
+                    Reset
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingCategory(null);
+                      setIsCategoryModalOpen(true);
+                    }}
+                    className="text-primary text-sm font-semibold hover:text-primary-hover flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-primary/10 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-lg">add</span>
+                    New Category
+                  </button>
+                </div>
+              </div>
+              <div className="bg-surface-dark/40 rounded-2xl border border-border-dark overflow-hidden flex flex-col">
+                {settings.categories.map((category) => (
+                  <div
+                    key={category.id}
+                    className="group flex items-center justify-between p-4 border-b border-border-dark/50 last:border-none hover:bg-surface-dark transition-all"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div
+                        className="flex h-10 w-10 items-center justify-center rounded-lg transition-colors"
+                        style={{
+                          backgroundColor: `${category.color}20`,
+                          color: category.color,
+                        }}
+                      >
+                        <span className="material-symbols-outlined text-xl">
+                          {category.icon}
+                        </span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-white text-sm font-semibold">
+                          {category.name}
+                        </span>
+                        <div className="flex items-center gap-2 mt-1">
+                          <div
+                            className="w-3 h-3 rounded-full border border-border-dark"
+                            style={{ backgroundColor: category.color }}
+                          />
+                          <span className="text-text-secondary text-xs font-mono">
+                            {category.color}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleEditCategory(category.id)}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary opacity-0 hover:bg-surface-darker hover:text-white group-hover:opacity-100 transition-all"
+                        title="Edit"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">
+                          edit
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCategory(category.id)}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary opacity-0 hover:bg-red-500/10 hover:text-red-400 group-hover:opacity-100 transition-all"
+                        title="Delete"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">
+                          delete
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
             {/* Appearance Section */}
             <section className="flex flex-col gap-5">
               <h3 className="text-white text-lg font-semibold tracking-tight flex items-center gap-2">
@@ -389,6 +560,16 @@ export function SettingsPage() {
         }}
         onSave={editingIDE ? handleUpdateIDE : handleAddIDE}
         editingIDE={editingIDE}
+      />
+      <CategoryModal
+        isOpen={isCategoryModalOpen}
+        category={editingCategory}
+        onClose={() => {
+          setIsCategoryModalOpen(false);
+          setEditingCategory(null);
+        }}
+        onSave={editingCategory ? handleUpdateCategory : handleAddCategory}
+        existingCategories={settings.categories}
       />
     </>
   );
