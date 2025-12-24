@@ -73,6 +73,49 @@ declare global {
         modified: number;
         language?: string;
       } | null>;
+      moveFolder: (
+        sourcePath: string,
+        destinationDir: string,
+        excludeNodeModules: boolean,
+        deleteSource: boolean
+      ) => Promise<{
+        success: boolean;
+        newPath?: string;
+        error?: string;
+      }>;
+      checkNodeModules: (
+        projectPath: string,
+        modulePaths?: string[]
+      ) => Promise<{
+        root: {
+          hasNodeModules: boolean;
+          hasPackageJson: boolean;
+        };
+        modules: Array<{
+          name: string;
+          path: string;
+          hasNodeModules: boolean;
+          hasPackageJson: boolean;
+        }>;
+      }>;
+      installPackages: (
+        projectPath: string,
+        packageManager: "npm" | "yarn" | "pnpm",
+        modulePath?: string
+      ) => Promise<{
+        success: boolean;
+        error?: string;
+      }>;
+      onMoveProgress: (
+        callback: (progress: {
+          phase: "preparing" | "moving" | "cleaning" | "complete" | "error";
+          currentFile?: string;
+          filesProcessed?: number;
+          totalFiles?: number;
+          error?: string;
+        }) => void
+      ) => void;
+      removeMoveProgressListener: () => void;
     };
   }
 }

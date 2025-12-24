@@ -41,4 +41,37 @@ contextBridge.exposeInMainWorld("dockevProject", {
     ipcRenderer.invoke("project:getDetails", projectPath),
   getStats: (projectPath) =>
     ipcRenderer.invoke("project:getStats", projectPath),
+  moveFolder: (
+    sourcePath,
+    destinationDir,
+    excludeNodeModules,
+    deleteSource
+  ) => {
+    return ipcRenderer.invoke(
+      "project:moveFolder",
+      sourcePath,
+      destinationDir,
+      excludeNodeModules,
+      deleteSource
+    );
+  },
+  checkNodeModules: (projectPath) => {
+    return ipcRenderer.invoke("project:checkNodeModules", projectPath);
+  },
+  installPackages: (projectPath, packageManager, modulePath) => {
+    return ipcRenderer.invoke(
+      "project:installPackages",
+      projectPath,
+      packageManager,
+      modulePath
+    );
+  },
+  onMoveProgress: (callback) => {
+    ipcRenderer.on("project:moveFolder:progress", (_event, progress) =>
+      callback(progress)
+    );
+  },
+  removeMoveProgressListener: () => {
+    ipcRenderer.removeAllListeners("project:moveFolder:progress");
+  },
 });

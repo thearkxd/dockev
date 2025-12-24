@@ -5,6 +5,7 @@ import { TitleBar } from "../components/layout/TitleBar";
 import { ProjectConfigModal } from "../components/modals/ProjectConfigModal";
 import { ManageTechStackModal } from "../components/modals/ManageTechStackModal";
 import { ViewAllChangesModal } from "../components/modals/ViewAllChangesModal";
+import { MoveProjectModal } from "../components/modals/MoveProjectModal";
 import type { Project } from "../types/Project";
 
 interface ProjectDetailPageProps {
@@ -26,6 +27,7 @@ export function ProjectDetailPage({
   const [isTechStackModalOpen, setIsTechStackModalOpen] = useState(false);
   const [isViewAllChangesModalOpen, setIsViewAllChangesModalOpen] =
     useState(false);
+  const [isMoveProjectModalOpen, setIsMoveProjectModalOpen] = useState(false);
   const [gitStatus, setGitStatus] = useState<{
     branch: string;
     lastCommit: string;
@@ -101,18 +103,26 @@ export function ProjectDetailPage({
     onUpdateProject(project.id, updates);
   };
 
-  const handleViewAllChanges = async () => {
-    // Load git status if not already loaded
-    if (!gitStatus && window.dockevWindow?.git?.getStatus) {
-      try {
-        const status = await window.dockevWindow.git.getStatus(project.path);
-        setGitStatus(status);
-      } catch (error) {
-        console.error("Error loading git status:", error);
-      }
-    }
-    setIsViewAllChangesModalOpen(true);
-  };
+      const handleViewAllChanges = async () => {
+        // Load git status if not already loaded
+        if (!gitStatus && window.dockevWindow?.git?.getStatus) {
+          try {
+            const status = await window.dockevWindow.git.getStatus(project.path);
+            setGitStatus(status);
+          } catch (error) {
+            console.error("Error loading git status:", error);
+          }
+        }
+        setIsViewAllChangesModalOpen(true);
+      };
+
+      const handleMoveProject = () => {
+        setIsMoveProjectModalOpen(true);
+      };
+
+      const handleMoveComplete = (newPath: string) => {
+        onUpdateProject(project.id, { path: newPath });
+      };
 
   return (
     <>
@@ -127,16 +137,17 @@ export function ProjectDetailPage({
         projects={projects}
       />
       <div className="h-screen pt-[49px] overflow-y-auto">
-        <ProjectDetail
-          project={project}
-          onOpenIDE={handleOpenIDE}
-          onDelete={handleDelete}
-          onRunDevServer={handleRunDevServer}
-          onOpenConfig={handleOpenConfig}
-          onManageTechStack={handleManageTechStack}
-          onViewAllChanges={handleViewAllChanges}
-          onUpdateProject={(updates) => onUpdateProject(project.id, updates)}
-        />
+            <ProjectDetail
+              project={project}
+              onOpenIDE={handleOpenIDE}
+              onDelete={handleDelete}
+              onRunDevServer={handleRunDevServer}
+              onOpenConfig={handleOpenConfig}
+              onManageTechStack={handleManageTechStack}
+              onViewAllChanges={handleViewAllChanges}
+              onUpdateProject={(updates) => onUpdateProject(project.id, updates)}
+              onMoveProject={handleMoveProject}
+            />
       </div>
       <ProjectConfigModal
         isOpen={isConfigModalOpen}
@@ -150,12 +161,18 @@ export function ProjectDetailPage({
         onClose={() => setIsTechStackModalOpen(false)}
         onSave={handleSaveTechStack}
       />
-      <ViewAllChangesModal
-        isOpen={isViewAllChangesModalOpen}
-        project={project}
-        gitStatus={gitStatus}
-        onClose={() => setIsViewAllChangesModalOpen(false)}
-      />
-    </>
-  );
-}
+          <ViewAllChangesModal
+            isOpen={isViewAllChangesModalOpen}
+            project={project}
+            gitStatus={gitStatus}
+            onClose={() => setIsViewAllChangesModalOpen(false)}
+          />
+          <MoveProjectModal
+            isOpen={isMoveProjectModalOpen}
+            project={project}
+            onClose={() => setIsMoveProjectModalOpen(false)}
+            onMoveComplete={handleMoveComplete}
+          />
+        </>
+      );
+    }

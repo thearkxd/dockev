@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import type { Project } from "../../types/Project";
 import type { Module } from "../../types/Module";
 import { Icon } from "@iconify/react";
+import { InstallPackagesModal } from "../modals/InstallPackagesModal";
 
 interface ProjectDetailProps {
   project: Project;
@@ -12,6 +13,7 @@ interface ProjectDetailProps {
   onManageTechStack?: () => void;
   onViewAllChanges?: () => void;
   onUpdateProject?: (updates: Partial<Project>) => void;
+  onMoveProject?: () => void;
 }
 
 export function ProjectDetail({
@@ -23,6 +25,7 @@ export function ProjectDetail({
   onManageTechStack,
   onViewAllChanges,
   onUpdateProject,
+  onMoveProject,
 }: ProjectDetailProps) {
   const [currentTime, setCurrentTime] = useState(() => Date.now());
   const [gitStatus, setGitStatus] = useState<{
@@ -62,6 +65,26 @@ export function ProjectDetail({
     modified: number;
     language?: string;
   } | null>(null);
+  const [nodeModulesStatus, setNodeModulesStatus] = useState<{
+    root: {
+      hasNodeModules: boolean;
+      hasPackageJson: boolean;
+    };
+    modules: Array<{
+      name: string;
+      path: string;
+      hasNodeModules: boolean;
+      hasPackageJson: boolean;
+    }>;
+  } | null>(null);
+  const [isInstallPackagesModalOpen, setIsInstallPackagesModalOpen] =
+    useState(false);
+  const [pendingModuleInstall, setPendingModuleInstall] = useState<
+    string | undefined
+  >(undefined);
+  const [pendingModuleName, setPendingModuleName] = useState<
+    string | undefined
+  >(undefined);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -145,6 +168,88 @@ export function ProjectDetail({
 
     loadProjectStats();
   }, [project.path]);
+
+  // Check node_modules status
+  useEffect(() => {
+    const checkNodeModules = async () => {
+      try {
+        if (window.dockevProject?.checkNodeModules) {
+          // Get module paths if modules exist
+          const modulePaths =
+            modules.length > 0 ? modules.map((m) => m.path) : undefined;
+
+          const status = await window.dockevProject.checkNodeModules(
+            project.path,
+            modulePaths
+          );
+          console.log("Node modules status:", status);
+          setNodeModulesStatus(status);
+        }
+      } catch (error) {
+        console.error("Error checking node_modules:", error);
+        setNodeModulesStatus(null);
+      }
+    };
+
+    checkNodeModules();
+    // Refresh every 30 seconds
+    const interval = setInterval(checkNodeModules, 30000);
+    return () => clearInterval(interval);
+  }, [project.path, modules]);
+
+  const handleInstallPackages = async (
+    packageManager: "npm" | "yarn" | "pnpm",
+    modulePath?: string
+  ) => {
+    try {
+      if (window.dockevProject?.installPackages) {
+        // Use modulePath parameter if provided, otherwise fall back to pendingModuleInstall
+        const actualModulePath = modulePath || pendingModuleInstall;
+        console.log("handleInstallPackages - modulePath param:", modulePath);
+        console.log(
+          "handleInstallPackages - pendingModuleInstall:",
+          pendingModuleInstall
+        );
+        console.log(
+          "handleInstallPackages - actualModulePath:",
+          actualModulePath
+        );
+        console.log("Installing packages for module:", actualModulePath);
+        console.log("Project path:", project.path);
+        const result = await window.dockevProject.installPackages(
+          project.path,
+          packageManager,
+          actualModulePath
+        );
+        if (result.success) {
+          // Refresh node_modules status
+          if (window.dockevProject?.checkNodeModules) {
+            const modulePaths =
+              modules.length > 0 ? modules.map((m) => m.path) : undefined;
+            const status = await window.dockevProject.checkNodeModules(
+              project.path,
+              modulePaths
+            );
+            console.log("Node modules status:", status);
+            setNodeModulesStatus(status);
+          }
+          alert("Packages installed successfully!");
+          setIsInstallPackagesModalOpen(false);
+          setPendingModuleInstall(undefined);
+          setPendingModuleName(undefined);
+        } else {
+          alert(`Failed to install packages: ${result.error}`);
+        }
+      }
+    } catch (error) {
+      console.error("Error installing packages:", error);
+      alert(
+        `Failed to install packages: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  };
 
   const detectModules = async () => {
     setIsDetectingModules(true);
@@ -473,9 +578,31 @@ export function ProjectDetail({
                 </span>
                 <span>Config</span>
               </button>
+              {onMoveProject && (
+                <button
+                  onClick={onMoveProject}
+                  className="flex items-center gap-2 px-4 h-10 rounded-md border border-yellow-500/30 bg-yellow-500/10 text-yellow-400 text-sm font-medium hover:bg-yellow-500/20 transition-colors"
+                  title="Move Project Folder (Experimental)"
+                >
+                  <span className="material-symbols-outlined text-[18px]">
+                    drive_file_move
+                  </span>
+                  <span>Move Folder</span>
+                </button>
+              )}
               <button
                 onClick={handleRunDevServer}
-                className="flex items-center gap-2 px-5 h-10 rounded-md bg-primary hover:bg-primary-hover text-white text-sm font-semibold shadow-glow transition-all active:scale-95"
+                className="flex items-center gap-2 px-5 h-10 rounded-md bg-primary hover:bg-primary-hover text-white text-sm font-semibold shadow-glow transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={
+                  (nodeModulesStatus?.root.hasPackageJson &&
+                    !nodeModulesStatus?.root.hasNodeModules) ||
+                  (nodeModulesStatus?.modules &&
+                    nodeModulesStatus?.modules.length > 0 &&
+                    nodeModulesStatus?.modules.some(
+                      (module) =>
+                        module.hasPackageJson && !module.hasNodeModules
+                    ))
+                }
               >
                 <span className="material-symbols-outlined text-[18px]">
                   play_arrow
@@ -486,7 +613,6 @@ export function ProjectDetail({
           </div>
 
           <div className="h-px w-full bg-gradient-to-r from-transparent via-border-dark to-transparent"></div>
-
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Left Column */}
             <div className="lg:col-span-8 flex flex-col gap-8">
@@ -904,6 +1030,120 @@ export function ProjectDetail({
 
             {/* Right Column - Sidebar */}
             <div className="lg:col-span-4 flex flex-col gap-6">
+              {/* Node Modules Warning */}
+              {nodeModulesStatus && (
+                <div className="space-y-3">
+                  {/* Root warning */}
+                  {nodeModulesStatus.root.hasPackageJson &&
+                    !nodeModulesStatus.root.hasNodeModules && (
+                      <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <span className="material-symbols-outlined text-yellow-400 text-[24px]">
+                            warning
+                          </span>
+                          <div className="flex-1">
+                            <h3 className="text-yellow-400 font-semibold mb-1">
+                              Root Dependencies Not Installed
+                            </h3>
+                            <p className="text-yellow-300/80 text-sm mb-3">
+                              The project root directory has a{" "}
+                              <code className="bg-surface-darker px-1 py-0.5 rounded text-xs">
+                                package.json
+                              </code>{" "}
+                              but{" "}
+                              <code className="bg-surface-darker px-1 py-0.5 rounded text-xs">
+                                node_modules
+                              </code>{" "}
+                              is missing. Install dependencies to run the
+                              project.
+                            </p>
+                            <button
+                              onClick={() => {
+                                setPendingModuleInstall(undefined);
+                                setPendingModuleName(undefined);
+                                setIsInstallPackagesModalOpen(true);
+                              }}
+                              className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-semibold rounded-md transition-colors flex items-center gap-2"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">
+                                download
+                              </span>
+                              <span>Install Root Dependencies</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                  {/* Module warnings */}
+                  {nodeModulesStatus.modules &&
+                    nodeModulesStatus.modules.length > 0 &&
+                    nodeModulesStatus.modules
+                      .filter(
+                        (module) =>
+                          module.hasPackageJson && !module.hasNodeModules
+                      )
+                      .map((module) => (
+                        <div
+                          key={module.path}
+                          className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4"
+                        >
+                          <div className="flex items-start gap-3">
+                            <span className="material-symbols-outlined text-yellow-400 text-[24px]">
+                              warning
+                            </span>
+                            <div className="flex-1">
+                              <h3 className="text-yellow-400 font-semibold text-sm mb-1">
+                                {module.name} Module - Dependencies Not
+                                Installed
+                              </h3>
+                              <p className="text-yellow-300/80 text-xs mb-3">
+                                The{" "}
+                                <code className="bg-surface-darker px-1 py-0.5 rounded text-xs">
+                                  {module.name}
+                                </code>{" "}
+                                module has a{" "}
+                                <code className="bg-surface-darker px-1 py-0.5 rounded text-xs">
+                                  package.json
+                                </code>{" "}
+                                but{" "}
+                                <code className="bg-surface-darker px-1 py-0.5 rounded text-xs">
+                                  node_modules
+                                </code>{" "}
+                                is missing. Install dependencies to run this
+                                module.
+                              </p>
+                              <button
+                                onClick={() => {
+                                  console.log(
+                                    "Button clicked - module.path:",
+                                    module.path
+                                  );
+                                  console.log(
+                                    "Button clicked - module.name:",
+                                    module.name
+                                  );
+                                  // Set state and open modal - use a callback to ensure state is set
+                                  setPendingModuleInstall(module.path);
+                                  setPendingModuleName(module.name);
+                                  // Use setTimeout to ensure state is updated before modal opens
+                                  setTimeout(() => {
+                                    setIsInstallPackagesModalOpen(true);
+                                  }, 0);
+                                }}
+                                className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-md transition-colors flex items-center gap-2 text-xs"
+                              >
+                                <span className="material-symbols-outlined text-[18px]">
+                                  download
+                                </span>
+                                <span>Install {module.name} Dependencies</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                </div>
+              )}
               {/* Environment Card */}
               <div className="rounded-xl p-1 border border-border-dark bg-surface-dark shadow-lg shadow-black/20">
                 <div className="p-5 flex flex-col gap-4">
@@ -1089,6 +1329,18 @@ export function ProjectDetail({
           </div>
         </div>
       </main>
+      <InstallPackagesModal
+        isOpen={isInstallPackagesModalOpen}
+        projectPath={project.path}
+        moduleName={pendingModuleName}
+        modulePath={pendingModuleInstall}
+        onClose={() => {
+          setIsInstallPackagesModalOpen(false);
+          setPendingModuleInstall(undefined);
+          setPendingModuleName(undefined);
+        }}
+        onInstall={handleInstallPackages}
+      />
     </div>
   );
 }
