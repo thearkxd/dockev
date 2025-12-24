@@ -135,7 +135,7 @@ export function ProjectCardContextMenu({
                   }}
                   className="w-full flex items-center gap-3 px-4 py-2 text-sm text-white hover:bg-white/5 transition-colors text-left"
                 >
-                  <span className="material-symbols-outlined text-[18px] text-text-secondary">
+                  {/* <span className="material-symbols-outlined text-[18px] text-text-secondary">
                     {ide.id === "vscode" ||
                     ide.id === "cursor" ||
                     ide.id === "webstorm"
@@ -143,7 +143,8 @@ export function ProjectCardContextMenu({
                       : ide.id === "terminal"
                       ? "terminal"
                       : "settings"}
-                  </span>
+                  </span> */}
+                  <Icon icon={ide.id === "cursor" ? "material-icon-theme:cursor" : ide.id === "webstorm" ? "simple-icons:webstorm" : "octicon:vscode-32"} width="20" height="20" />
                   <span>{ide.name}</span>
                 </button>
               ))}

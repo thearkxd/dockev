@@ -20,6 +20,7 @@ export function ProjectConfigModal({
   const [tags, setTags] = useState<string[]>(project.tags);
   const [tagInput, setTagInput] = useState("");
   const [color, setColor] = useState<string>(project.color || "");
+  const [description, setDescription] = useState<string>(project.description || "");
   const [devServerCommand, setDevServerCommand] = useState(
     project.config?.devServerCommand || ""
   );
@@ -59,6 +60,7 @@ export function ProjectConfigModal({
         setDefaultIde(project.defaultIde);
         setTags(project.tags);
         setColor(project.color || "");
+        setDescription(project.description || "");
         setDevServerCommand(project.config?.devServerCommand || "");
         setEnvVars(
           project.config?.environmentVariables
@@ -145,6 +147,7 @@ export function ProjectConfigModal({
       defaultIde,
       tags,
       color: color.trim() || undefined,
+      description: description.trim() || undefined,
       config: Object.keys(config).length > 0 ? config : undefined,
     });
     onClose();
@@ -213,6 +216,20 @@ export function ProjectConfigModal({
                   onChange={(e) => setName(e.target.value)}
                   className="w-full rounded-lg border border-border-dark bg-background-dark/50 px-4 py-3 text-sm text-white placeholder-text-secondary/60 transition-all focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                   placeholder="e.g., My Awesome Project"
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">
+                  Description (Optional)
+                </label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                  className="w-full rounded-lg border border-border-dark bg-background-dark/50 px-4 py-3 text-sm text-white placeholder-text-secondary/60 transition-all focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary resize-none"
+                  placeholder="Add a brief description of your project..."
                 />
               </div>
 

@@ -1336,9 +1336,12 @@ export function ProjectDetail({
                     !nodeModulesStatus.root.hasNodeModules && (
                       <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
                         <div className="flex items-start gap-3">
-                          <span className="material-symbols-outlined text-yellow-400 text-[24px]">
-                            warning
-                          </span>
+                          <Icon
+                            icon="material-symbols:error-outline-rounded"
+                            width="24"
+                            height="24"
+                            color="yellow"
+                          />
                           <div className="flex-1">
                             <h3 className="text-yellow-400 font-semibold mb-1">
                               Root Dependencies Not Installed
@@ -1387,9 +1390,12 @@ export function ProjectDetail({
                           className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4"
                         >
                           <div className="flex items-start gap-3">
-                            <span className="material-symbols-outlined text-yellow-400 text-[24px]">
-                              warning
-                            </span>
+                            <Icon
+                              icon="material-symbols:error-outline-rounded"
+                              width="24"
+                              height="24"
+                              color="yellow"
+                            />
                             <div className="flex-1">
                               <h3 className="text-yellow-400 font-semibold text-sm mb-1">
                                 {module.name} Module - Dependencies Not

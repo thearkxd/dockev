@@ -65,7 +65,7 @@ function createWindow() {
       }
     );
   } else {
-    mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
+    mainWindow.loadFile(path.join(__dirname, "./dist/index.html"));
   }
 }
 

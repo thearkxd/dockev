@@ -162,7 +162,8 @@ export function SettingsPage() {
                       Default Package Manager
                     </span>
                     <p className="text-text-secondary text-sm">
-                      Select the default package manager for running dev servers.
+                      Select the default package manager for running dev
+                      servers.
                     </p>
                   </div>
                   <div className="relative min-w-[200px]">

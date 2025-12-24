@@ -64,7 +64,6 @@ Hiç şunları yaşadınız mı:
 
 2. **Bağımlılıkları yükleyin**
    ```bash
-   cd desktop
    npm install
    ```
 
@@ -136,14 +135,15 @@ Dockev modern web teknolojileriyle geliştirilmiştir:
 
 ```
 dockev/
-├── desktop/              # Ana uygulama
-│   ├── electron/         # Electron ana süreç
-│   ├── src/              # React uygulaması
-│   │   ├── components/   # UI bileşenleri
-│   │   ├── pages/        # Sayfa bileşenleri
-│   │   ├── types/        # TypeScript tipleri
-│   │   └── utils/        # Yardımcı fonksiyonlar
-│   └── package.json
+├── electron/             # Electron ana süreç
+│   ├── main.ts           # Ana süreç giriş noktası
+│   └── preload.js        # Preload script
+├── src/                  # React uygulaması
+│   ├── components/       # UI bileşenleri
+│   ├── pages/            # Sayfa bileşenleri
+│   ├── types/            # TypeScript tipleri
+│   └── utils/            # Yardımcı fonksiyonlar
+├── package.json          # Proje bağımlılıkları
 ├── PRD.md                # Ürün Gereksinimleri Belgesi
 └── README.md             # Bu dosya
 ```

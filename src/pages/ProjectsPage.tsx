@@ -21,8 +21,8 @@ interface ProjectsPageProps {
   onOpenIDE?: (projectPath: string, ide: string) => Promise<void>;
 }
 
-export function ProjectsPage({ 
-  projects, 
+export function ProjectsPage({
+  projects,
   onAddProject,
   onUpdateProject,
   onDeleteProject,

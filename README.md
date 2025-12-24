@@ -4,7 +4,7 @@
 
 Dockev is a beautiful, local-first desktop application that helps developers organize, discover, and instantly launch their projects. Say goodbye to hunting through folders and hello to a streamlined workflow! ✨
 
-![Dockev](https://img.shields.io/badge/version-0.0.0-blue)
+![Dockev](https://img.shields.io/badge/version-0.1.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
 
@@ -60,14 +60,13 @@ Ever found yourself:
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/yourusername/dockev.git
+   git clone https://github.com/thearkxd/dockev.git
    cd dockev
    ```
 
 2. **Install dependencies**
 
    ```bash
-   cd desktop
    npm install
    ```
 
@@ -141,14 +140,15 @@ Dockev is built with modern web technologies:
 
 ```
 dockev/
-├── desktop/              # Main application
-│   ├── electron/         # Electron main process
-│   ├── src/              # React application
-│   │   ├── components/   # UI components
-│   │   ├── pages/        # Page components
-│   │   ├── types/        # TypeScript types
-│   │   └── utils/        # Utility functions
-│   └── package.json
+├── electron/             # Electron main process
+│   ├── main.ts           # Main process entry point
+│   └── preload.js        # Preload script
+├── src/                  # React application
+│   ├── components/       # UI components
+│   ├── pages/            # Page components
+│   ├── types/            # TypeScript types
+│   └── utils/            # Utility functions
+├── package.json          # Project dependencies
 ├── PRD.md                # Product Requirements Document
 └── README.md             # This file
 ```
@@ -163,11 +163,13 @@ _(Add screenshots here when available)_
 
 ## 🤝 Contributing
 
-Contributions are welcome! Here's how you can help:
+Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+
+Quick start:
 
 1. 🍴 Fork the repository
 2. 🌿 Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. 💾 Commit your changes (`git commit -m 'Add some amazing feature'`)
+3. 💾 Commit your changes (`git commit -m 'feat: add some amazing feature'`)
 4. 📤 Push to the branch (`git push origin feature/amazing-feature`)
 5. 🔄 Open a Pull Request
 
@@ -175,7 +177,7 @@ Contributions are welcome! Here's how you can help:
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
@@ -191,9 +193,10 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 Having issues? Found a bug? Want to suggest a feature?
 
-- 🐛 [Open an issue](https://github.com/yourusername/dockev/issues)
-- 💬 [Start a discussion](https://github.com/yourusername/dockev/discussions)
-- 📧 Email: your-email@example.com
+- 🐛 [Open an issue](https://github.com/thearkxd/dockev/issues)
+- 💬 [Start a discussion](https://github.com/thearkxd/dockev/discussions)
+- 📖 [Read the contributing guide](CONTRIBUTING.md)
+- 📝 [View the changelog](CHANGELOG.md)
 
 ---
 

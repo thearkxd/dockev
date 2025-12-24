@@ -11,6 +11,7 @@ interface AddProjectModalProps {
     defaultIde: string;
     tags: string[];
     color?: string;
+    description?: string;
   }) => void;
 }
 
@@ -29,6 +30,7 @@ export function AddProjectModal({
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [color, setColor] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
   const [errors, setErrors] = useState<{ name?: string; path?: string }>({});
   const [isAnimating, setIsAnimating] = useState(false);
 
@@ -132,6 +134,7 @@ export function AddProjectModal({
       defaultIde,
       tags,
       color: color.trim() || undefined,
+      description: description.trim() || undefined,
     });
     onClose();
   };
@@ -326,6 +329,20 @@ export function AddProjectModal({
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Project Description */}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-text-secondary mb-2">
+                  Description (Optional)
+                </label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                  className="w-full rounded-lg border border-border-dark bg-white/5 px-4 py-3 text-sm text-white placeholder-text-secondary/60 transition-all focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary resize-none"
+                  placeholder="Add a brief description of your project..."
+                />
               </div>
 
               {/* Project Color */}

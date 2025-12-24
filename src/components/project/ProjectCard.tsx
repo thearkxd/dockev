@@ -302,6 +302,11 @@ export const ProjectCard = ({
               <h3 className="text-white text-[17px] font-semibold tracking-tight group-hover:text-primary transition-colors">
                 {project.name}
               </h3>
+              {project.description && (
+                <p className="text-text-secondary text-xs line-clamp-2 mt-1">
+                  {project.description}
+                </p>
+              )}
               <p className="text-text-secondary text-[11px] font-mono bg-white/5 px-2 py-1 rounded border border-white/5 w-fit max-w-[220px] truncate">
                 {formatPath(project.path)}
               </p>

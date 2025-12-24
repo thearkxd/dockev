@@ -120,7 +120,7 @@
 
 #### 7. Proje Ayarları
 
-- [ ] Global ayarlar sayfası
+- [x] Global ayarlar sayfası
 - [ ] Tema seçimi (dark/light)
 - [ ] IDE path'leri özelleştirme
 - [ ] Git config ayarları
@@ -156,7 +156,7 @@
 
 #### 12. Proje Bağımlılıkları
 
-- [ ] package.json dependencies analizi
+- [x] package.json dependencies analizi
 - [ ] Eski/güvenlik açığı olan paketleri tespit
 - [ ] Bağımlılık güncelleme önerileri
 
@@ -181,7 +181,7 @@
 
 #### 16. Erişilebilirlik
 
-- [ ] Keyboard shortcuts
+- [x] Keyboard shortcuts
 - [ ] Screen reader desteği
 - [ ] High contrast mode
 
