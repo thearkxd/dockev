@@ -81,6 +81,14 @@ Ever found yourself:
    npm run build
    ```
 
+5. **Run tests**
+   ```bash
+   npm run test          # Run tests in watch mode
+   npm run test:run      # Run tests once
+   npm run test:ui       # Run tests with UI
+   npm run test:coverage # Run tests with coverage report
+   ```
+
 ---
 
 ## 📖 How to Use
@@ -122,17 +130,17 @@ Access settings by clicking the gear icon in the sidebar:
 
 ---
 
-## 🛠️ Tech Stack
+## 🧪 Testing
 
-Dockev is built with modern web technologies:
+Dockev uses [Vitest](https://vitest.dev/) for testing:
 
-- **⚛️ React 19** - UI framework
-- **⚡ Electron** - Desktop app framework
-- **🎨 Tailwind CSS** - Styling
-- **📘 TypeScript** - Type safety
-- **🚀 Vite** - Build tool
-- **🔄 React Router** - Navigation
-- **🎯 Iconify** - Icon library
+- **Unit Tests**: Test utility functions and business logic
+- **Component Tests**: Test React components with React Testing Library
+- **Coverage**: Generate coverage reports with `npm run test:coverage`
+
+Test files are located in `src/**/__tests__/` directories.
+
+---
 
 ---
 
