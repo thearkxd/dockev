@@ -5,5 +5,6 @@ export type Module = {
   techStack: string[]; // Detected technologies
   defaultIde: "vscode" | "cursor" | "webstorm";
   lastOpenedAt?: number;
+  devServerCommand?: string; // Custom dev server command for this module
 };
 

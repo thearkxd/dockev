@@ -3,6 +3,8 @@ import type { Project } from "../../types/Project";
 import type { Module } from "../../types/Module";
 import { Icon } from "@iconify/react";
 import { InstallPackagesModal } from "../modals/InstallPackagesModal";
+import { EditModuleModal } from "../modals/EditModuleModal";
+import { MergeModulesModal } from "../modals/MergeModulesModal";
 
 interface ProjectDetailProps {
   project: Project;
@@ -85,6 +87,9 @@ export function ProjectDetail({
   const [pendingModuleName, setPendingModuleName] = useState<
     string | undefined
   >(undefined);
+  const [isEditModuleModalOpen, setIsEditModuleModalOpen] = useState(false);
+  const [editingModule, setEditingModule] = useState<Module | null>(null);
+  const [isMergeModulesModalOpen, setIsMergeModulesModalOpen] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -302,6 +307,90 @@ export function ProjectDetail({
     const updatedModules = modules.filter((m) => m.id !== moduleId);
     setModules(updatedModules);
     // Update project
+    if (onUpdateProject) {
+      onUpdateProject({ modules: updatedModules });
+    }
+  };
+
+  const handleEditModule = (module: Module) => {
+    setEditingModule(module);
+    setIsEditModuleModalOpen(true);
+  };
+
+  const handleSaveModule = (updatedModule: Module) => {
+    const updatedModules = modules.map((m) =>
+      m.id === updatedModule.id ? updatedModule : m
+    );
+    setModules(updatedModules);
+    // Update project
+    if (onUpdateProject) {
+      onUpdateProject({ modules: updatedModules });
+    }
+  };
+
+  const handleRunModuleDevServer = async (module: Module) => {
+    if (onRunDevServer) {
+      try {
+        // Construct full module path
+        let modulePath = module.path;
+        if (
+          module.path.startsWith(".") ||
+          (!module.path.includes(":") && navigator.platform.includes("Win"))
+        ) {
+          const separator = project.path.includes("\\") ? "\\" : "/";
+          const cleanModulePath = module.path
+            .replace(/^\.\//, "")
+            .replace(/^\./, "");
+          modulePath = `${project.path}${separator}${cleanModulePath}`;
+        }
+
+        // If module has custom dev server command, use it
+        if (module.devServerCommand && window.dockevWindow?.run?.devServer) {
+          await window.dockevWindow.run.devServer(
+            modulePath,
+            module.devServerCommand
+          );
+        } else {
+          // Use default dev server
+          await onRunDevServer(modulePath);
+        }
+      } catch (error) {
+        console.error("Error running module dev server:", error);
+        alert(
+          `Failed to start dev server for ${module.name}. Make sure you have npm/yarn/pnpm installed.`
+        );
+      }
+    }
+  };
+
+  const handleMergeModules = (
+    sourceModuleId: string,
+    targetModuleId: string
+  ) => {
+    const sourceModule = modules.find((m) => m.id === sourceModuleId);
+    const targetModule = modules.find((m) => m.id === targetModuleId);
+
+    if (!sourceModule || !targetModule) return;
+
+    // Merge tech stacks (unique values)
+    const mergedTechStack = [
+      ...new Set([...targetModule.techStack, ...sourceModule.techStack]),
+    ];
+
+    // Create merged module (keep target's properties, merge tech stack, use source's dev server if target doesn't have one)
+    const mergedModule: Module = {
+      ...targetModule,
+      techStack: mergedTechStack,
+      devServerCommand:
+        targetModule.devServerCommand || sourceModule.devServerCommand,
+    };
+
+    // Remove source module and update target module
+    const updatedModules = modules
+      .filter((m) => m.id !== sourceModuleId)
+      .map((m) => (m.id === targetModuleId ? mergedModule : m));
+
+    setModules(updatedModules);
     if (onUpdateProject) {
       onUpdateProject({ modules: updatedModules });
     }
@@ -686,13 +775,24 @@ export function ProjectDetail({
                   <h3 className="text-white text-base font-semibold">
                     Modules
                   </h3>
-                  <button
-                    onClick={detectModules}
-                    disabled={isDetectingModules}
-                    className="text-xs text-primary hover:underline disabled:opacity-50"
-                  >
-                    {isDetectingModules ? "Detecting..." : "Detect Modules"}
-                  </button>
+                  <div className="flex items-center gap-3">
+                    {modules.length > 1 && (
+                      <button
+                        onClick={() => setIsMergeModulesModalOpen(true)}
+                        className="text-xs text-primary hover:underline"
+                        title="Merge Modules"
+                      >
+                        Merge Modules
+                      </button>
+                    )}
+                    <button
+                      onClick={detectModules}
+                      disabled={isDetectingModules}
+                      className="text-xs text-primary hover:underline disabled:opacity-50"
+                    >
+                      {isDetectingModules ? "Detecting..." : "Detect Modules"}
+                    </button>
+                  </div>
                 </div>
                 <div className="flex flex-col gap-3">
                   {modules.length > 0 ? (
@@ -727,6 +827,26 @@ export function ProjectDetail({
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
+                          {module.devServerCommand && (
+                            <button
+                              onClick={() => handleRunModuleDevServer(module)}
+                              className="p-2 rounded hover:bg-green-500/10 text-text-secondary hover:text-green-400 transition-colors"
+                              title="Run Dev Server"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">
+                                play_arrow
+                              </span>
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleEditModule(module)}
+                            className="p-2 rounded hover:bg-white/5 text-text-secondary hover:text-white transition-colors"
+                            title="Edit Module"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">
+                              edit
+                            </span>
+                          </button>
                           <button
                             onClick={() =>
                               handleOpenModuleIDE(module, project.defaultIde)
@@ -1340,6 +1460,21 @@ export function ProjectDetail({
           setPendingModuleName(undefined);
         }}
         onInstall={handleInstallPackages}
+      />
+      <EditModuleModal
+        isOpen={isEditModuleModalOpen}
+        module={editingModule}
+        onClose={() => {
+          setIsEditModuleModalOpen(false);
+          setEditingModule(null);
+        }}
+        onSave={handleSaveModule}
+      />
+      <MergeModulesModal
+        isOpen={isMergeModulesModalOpen}
+        modules={modules}
+        onClose={() => setIsMergeModulesModalOpen(false)}
+        onMerge={handleMergeModules}
       />
     </div>
   );
