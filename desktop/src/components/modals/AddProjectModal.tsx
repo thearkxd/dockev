@@ -10,6 +10,7 @@ interface AddProjectModalProps {
     category: string;
     defaultIde: string;
     tags: string[];
+    color?: string;
   }) => void;
 }
 
@@ -27,8 +28,25 @@ export function AddProjectModal({
   const [availableIDEs] = useState(() => settingsStorage.getAllIDEs());
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
+  const [color, setColor] = useState<string>("");
   const [errors, setErrors] = useState<{ name?: string; path?: string }>({});
   const [isAnimating, setIsAnimating] = useState(false);
+
+  // Predefined color palette
+  const colorPalette = [
+    "#6366F1", // indigo
+    "#8B5CF6", // purple
+    "#EC4899", // pink
+    "#F43F5E", // rose
+    "#EF4444", // red
+    "#F59E0B", // amber
+    "#10B981", // emerald
+    "#06B6D4", // cyan
+    "#3B82F6", // blue
+    "#14B8A6", // teal
+    "#F97316", // orange
+    "#84CC16", // lime
+  ];
 
   // Reset form when modal closes
   useEffect(() => {
@@ -41,6 +59,7 @@ export function AddProjectModal({
       setDefaultIde("vscode");
       setTags([]);
       setTagInput("");
+      setColor("");
       setErrors({});
       setIsAnimating(false);
     }
@@ -112,6 +131,7 @@ export function AddProjectModal({
       category,
       defaultIde,
       tags,
+      color: color.trim() || undefined,
     });
     onClose();
   };
@@ -305,6 +325,64 @@ export function AddProjectModal({
                       </span>
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* Project Color */}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-text-secondary mb-2">
+                  Project Color (Optional)
+                </label>
+                <div className="space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    {colorPalette.map((paletteColor) => (
+                      <button
+                        key={paletteColor}
+                        type="button"
+                        onClick={() =>
+                          setColor(color === paletteColor ? "" : paletteColor)
+                        }
+                        className={`size-10 rounded-lg border-2 transition-all hover:scale-110 ${
+                          color === paletteColor
+                            ? "border-white ring-2 ring-primary ring-offset-2 ring-offset-surface-dark"
+                            : "border-border-dark hover:border-white/50"
+                        }`}
+                        style={{ backgroundColor: paletteColor }}
+                        title={paletteColor}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={color || "#6366F1"}
+                      onChange={(e) => setColor(e.target.value)}
+                      className="size-10 rounded-lg border border-border-dark bg-white/5 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={color}
+                      onChange={(e) => setColor(e.target.value)}
+                      placeholder="#6366F1"
+                      className="flex-1 rounded-lg border border-border-dark bg-white/5 px-4 py-2 text-sm text-white font-mono placeholder-text-secondary/60 focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                      pattern="^#[0-9A-Fa-f]{6}$"
+                    />
+                    {color && (
+                      <button
+                        type="button"
+                        onClick={() => setColor("")}
+                        className="px-3 py-2 rounded-lg text-text-secondary hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                        title="Clear color"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">
+                          close
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-xs text-text-secondary">
+                    Choose a custom color for this project card
+                  </p>
                 </div>
               </div>
 

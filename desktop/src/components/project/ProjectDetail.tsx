@@ -581,6 +581,19 @@ export function ProjectDetail({
     files: [],
   };
 
+  // Get project color or use default primary
+  const projectColor = project.color || "#6366F1"; // Default indigo
+
+  // Helper function to get color with opacity
+  const getColorWithOpacity = (opacity: number): string => {
+    if (!project.color) return `rgba(99, 102, 241, ${opacity})`; // Default indigo
+    const hex = project.color.replace("#", "");
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  };
+
   return (
     <div className="bg-background-dark text-text-primary font-display antialiased min-h-screen flex flex-col">
       {/* Main Content */}
@@ -694,7 +707,30 @@ export function ProjectDetail({
               )}
               <button
                 onClick={handleRunDevServer}
-                className="flex items-center gap-2 px-5 h-10 rounded-md bg-primary hover:bg-primary-hover text-white text-sm font-semibold shadow-glow transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-5 h-10 rounded-md text-white text-sm font-semibold shadow-glow transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: projectColor,
+                  boxShadow: project.color
+                    ? `0 0 20px ${getColorWithOpacity(0.3)}`
+                    : undefined,
+                }}
+                onMouseEnter={(e) => {
+                  if (project.color) {
+                    const hex = project.color.replace("#", "");
+                    const r = parseInt(hex.substring(0, 2), 16);
+                    const g = parseInt(hex.substring(2, 4), 16);
+                    const b = parseInt(hex.substring(4, 6), 16);
+                    e.currentTarget.style.backgroundColor = `rgb(${Math.min(
+                      255,
+                      r + 10
+                    )}, ${Math.min(255, g + 10)}, ${Math.min(255, b + 10)})`;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (project.color) {
+                    e.currentTarget.style.backgroundColor = projectColor;
+                  }
+                }}
                 disabled={
                   (nodeModulesStatus?.root.hasPackageJson &&
                     !nodeModulesStatus?.root.hasNodeModules) ||
@@ -740,7 +776,16 @@ export function ProjectDetail({
 
               {/* Folder Path Card */}
               <div className="group relative rounded-xl border border-border-dark bg-surface-dark p-1">
-                <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div
+                  className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{
+                    background: project.color
+                      ? `linear-gradient(to right, transparent, ${getColorWithOpacity(
+                          0.5
+                        )}, transparent)`
+                      : undefined,
+                  }}
+                ></div>
                 <div className="flex items-center justify-between px-4 py-3">
                   <div className="flex items-center gap-3 overflow-hidden flex-1">
                     <span className="material-symbols-outlined text-text-secondary">
@@ -792,7 +837,8 @@ export function ProjectDetail({
                     {modules.length > 1 && (
                       <button
                         onClick={() => setIsMergeModulesModalOpen(true)}
-                        className="text-xs text-primary hover:underline"
+                        className="text-xs hover:underline"
+                        style={{ color: projectColor }}
                         title="Merge Modules"
                       >
                         Merge Modules
@@ -801,7 +847,8 @@ export function ProjectDetail({
                     <button
                       onClick={detectModules}
                       disabled={isDetectingModules}
-                      className="text-xs text-primary hover:underline disabled:opacity-50"
+                      className="text-xs hover:underline disabled:opacity-50"
+                      style={{ color: projectColor }}
                     >
                       {isDetectingModules ? "Detecting..." : "Detect Modules"}
                     </button>
@@ -812,10 +859,38 @@ export function ProjectDetail({
                     modules.map((module) => (
                       <div
                         key={module.id}
-                        className="flex items-center justify-between p-4 rounded-xl border border-border-dark bg-surface-dark hover:border-primary/30 transition-colors group"
+                        className="flex items-center justify-between p-4 rounded-xl border border-border-dark bg-surface-dark transition-colors group"
+                        style={{
+                          borderColor: project.color
+                            ? getColorWithOpacity(0.3)
+                            : undefined,
+                        }}
+                        onMouseEnter={(e) => {
+                          if (project.color) {
+                            e.currentTarget.style.borderColor =
+                              getColorWithOpacity(0.5);
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (project.color) {
+                            e.currentTarget.style.borderColor =
+                              getColorWithOpacity(0.3);
+                          }
+                        }}
                       >
                         <div className="flex items-center gap-4 flex-1 min-w-0">
-                          <div className="flex items-center justify-center size-10 rounded-lg bg-primary/10 text-primary border border-primary/20 flex-shrink-0">
+                          <div
+                            className="flex items-center justify-center size-10 rounded-lg border flex-shrink-0"
+                            style={{
+                              backgroundColor: project.color
+                                ? getColorWithOpacity(0.1)
+                                : undefined,
+                              borderColor: project.color
+                                ? getColorWithOpacity(0.2)
+                                : undefined,
+                              color: projectColor,
+                            }}
+                          >
                             <span className="material-symbols-outlined text-[20px]">
                               folder
                             </span>
@@ -831,7 +906,16 @@ export function ProjectDetail({
                               {module.techStack.slice(0, 3).map((tech) => (
                                 <span
                                   key={tech}
-                                  className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20"
+                                  className="text-[10px] px-1.5 py-0.5 rounded border"
+                                  style={{
+                                    backgroundColor: project.color
+                                      ? getColorWithOpacity(0.1)
+                                      : undefined,
+                                    borderColor: project.color
+                                      ? getColorWithOpacity(0.2)
+                                      : undefined,
+                                    color: projectColor,
+                                  }}
                                 >
                                   {tech}
                                 </span>
@@ -907,7 +991,24 @@ export function ProjectDetail({
                         <button
                           key={index}
                           onClick={() => handleAddModule(detected)}
-                          className="flex items-center justify-between p-3 rounded-lg border border-dashed border-border-dark bg-surface-dark/50 hover:border-primary/50 hover:bg-surface-dark transition-colors text-left"
+                          className="flex items-center justify-between p-3 rounded-lg border border-dashed border-border-dark bg-surface-dark/50 hover:bg-surface-dark transition-colors text-left"
+                          style={{
+                            borderColor: project.color
+                              ? getColorWithOpacity(0.5)
+                              : undefined,
+                          }}
+                          onMouseEnter={(e) => {
+                            if (project.color) {
+                              e.currentTarget.style.borderColor =
+                                getColorWithOpacity(0.7);
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (project.color) {
+                              e.currentTarget.style.borderColor =
+                                getColorWithOpacity(0.5);
+                            }
+                          }}
                         >
                           <div className="flex flex-col">
                             <span className="text-sm font-medium text-white">
@@ -920,7 +1021,16 @@ export function ProjectDetail({
                               {detected.techStack.map((tech) => (
                                 <span
                                   key={tech}
-                                  className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20"
+                                  className="text-[10px] px-1.5 py-0.5 rounded border"
+                                  style={{
+                                    backgroundColor: project.color
+                                      ? getColorWithOpacity(0.1)
+                                      : undefined,
+                                    borderColor: project.color
+                                      ? getColorWithOpacity(0.2)
+                                      : undefined,
+                                    color: projectColor,
+                                  }}
                                 >
                                   {tech}
                                 </span>
@@ -946,7 +1056,8 @@ export function ProjectDetail({
                     </h3>
                     <button
                       onClick={handleManageTechStack}
-                      className="text-xs text-primary hover:underline"
+                      className="text-xs hover:underline"
+                      style={{ color: projectColor }}
                     >
                       Manage
                     </button>
@@ -984,7 +1095,10 @@ export function ProjectDetail({
                           {tech.name}
                         </span>
                         {project.config?.techStackVersions?.[tech.name] && (
-                          <span className="text-xs font-mono text-primary mt-0.5">
+                          <span
+                            className="text-xs font-mono mt-0.5"
+                            style={{ color: projectColor }}
+                          >
                             {project.config.techStackVersions[tech.name]}
                           </span>
                         )}
@@ -1010,7 +1124,28 @@ export function ProjectDetail({
                   {techStack.length > 4 && (
                     <button
                       onClick={() => setShowAllTechs(!showAllTechs)}
-                      className="text-sm text-primary hover:text-primary-hover font-medium flex items-center justify-center gap-2 py-2 transition-colors"
+                      className="text-sm font-medium flex items-center justify-center gap-2 py-2 transition-colors"
+                      style={{ color: projectColor }}
+                      onMouseEnter={(e) => {
+                        if (project.color) {
+                          const hex = project.color.replace("#", "");
+                          const r = parseInt(hex.substring(0, 2), 16);
+                          const g = parseInt(hex.substring(2, 4), 16);
+                          const b = parseInt(hex.substring(4, 6), 16);
+                          e.currentTarget.style.color = `rgb(${Math.min(
+                            255,
+                            r + 20
+                          )}, ${Math.min(255, g + 20)}, ${Math.min(
+                            255,
+                            b + 20
+                          )})`;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (project.color) {
+                          e.currentTarget.style.color = projectColor;
+                        }
+                      }}
                     >
                       <span>
                         {showAllTechs
@@ -1084,7 +1219,28 @@ export function ProjectDetail({
                         {displayGitStatus.files.length > 0 && (
                           <button
                             onClick={handleViewAllChanges}
-                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 text-xs font-medium transition-colors"
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors"
+                            style={{
+                              backgroundColor: project.color
+                                ? getColorWithOpacity(0.1)
+                                : undefined,
+                              borderColor: project.color
+                                ? getColorWithOpacity(0.2)
+                                : undefined,
+                              color: projectColor,
+                            }}
+                            onMouseEnter={(e) => {
+                              if (project.color) {
+                                e.currentTarget.style.backgroundColor =
+                                  getColorWithOpacity(0.2);
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (project.color) {
+                                e.currentTarget.style.backgroundColor =
+                                  getColorWithOpacity(0.1);
+                              }
+                            }}
                           >
                             <span className="material-symbols-outlined text-[16px]">
                               code
@@ -1120,7 +1276,16 @@ export function ProjectDetail({
                                       ? "delete"
                                       : "edit"}
                                   </span>
-                                  <span className="text-sm text-gray-300 font-mono group-hover:text-primary transition-colors truncate flex-1">
+                                  <span
+                                    className="text-sm text-gray-300 font-mono transition-colors truncate flex-1"
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.color =
+                                        projectColor;
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.color = "#d1d5db";
+                                    }}
+                                  >
                                     {file.name}
                                   </span>
                                 </div>
@@ -1288,7 +1453,33 @@ export function ProjectDetail({
                   </div>
                   <button
                     onClick={() => onOpenIDE(project.path, project.defaultIde)}
-                    className="relative group flex items-center justify-between w-full p-4 rounded-lg bg-primary hover:bg-primary-hover text-white transition-all overflow-hidden"
+                    className="relative group flex items-center justify-between w-full p-4 rounded-lg text-white transition-all overflow-hidden"
+                    style={{
+                      backgroundColor: projectColor,
+                      boxShadow: project.color
+                        ? `0 0 20px ${getColorWithOpacity(0.3)}`
+                        : undefined,
+                    }}
+                    onMouseEnter={(e) => {
+                      if (project.color) {
+                        const hex = project.color.replace("#", "");
+                        const r = parseInt(hex.substring(0, 2), 16);
+                        const g = parseInt(hex.substring(2, 4), 16);
+                        const b = parseInt(hex.substring(4, 6), 16);
+                        e.currentTarget.style.backgroundColor = `rgb(${Math.min(
+                          255,
+                          r + 10
+                        )}, ${Math.min(255, g + 10)}, ${Math.min(
+                          255,
+                          b + 10
+                        )})`;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (project.color) {
+                        e.currentTarget.style.backgroundColor = projectColor;
+                      }
+                    }}
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     <div className="flex items-center gap-3 relative z-10">
@@ -1351,7 +1542,26 @@ export function ProjectDetail({
                   </div>
                   <button
                     onClick={() => onOpenIDE(project.path, "terminal")}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-dashed border-border-dark text-text-secondary hover:text-white hover:border-primary transition-all text-sm font-medium"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-dashed border-border-dark text-text-secondary hover:text-white transition-all text-sm font-medium"
+                    style={{
+                      borderColor: project.color
+                        ? getColorWithOpacity(0.5)
+                        : undefined,
+                    }}
+                    onMouseEnter={(e) => {
+                      if (project.color) {
+                        e.currentTarget.style.borderColor =
+                          getColorWithOpacity(0.7);
+                        e.currentTarget.style.color = "#ffffff";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (project.color) {
+                        e.currentTarget.style.borderColor =
+                          getColorWithOpacity(0.5);
+                        e.currentTarget.style.color = "";
+                      }
+                    }}
                   >
                     <span className="material-symbols-outlined text-[18px]">
                       terminal

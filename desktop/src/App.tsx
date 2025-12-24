@@ -77,6 +77,7 @@ export default function App() {
     category: string;
     defaultIde: string;
     tags: string[];
+    color?: string;
   }) => {
     const newProject: Project = {
       id: Date.now().toString(),
@@ -86,6 +87,7 @@ export default function App() {
       tags: projectData.tags,
       defaultIde: projectData.defaultIde as "vscode" | "cursor" | "webstorm",
       lastOpenedAt: undefined,
+      color: projectData.color,
     };
     const updatedProjects = [...projects, newProject];
     setProjects(updatedProjects);

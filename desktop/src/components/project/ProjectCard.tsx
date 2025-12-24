@@ -252,16 +252,42 @@ export const ProjectCard = ({
       <div
         onClick={onClick}
         onContextMenu={handleContextMenu}
-        className={`group flex flex-col rounded-2xl bg-surface-dark border border-border-dark hover:border-primary/40 hover:shadow-glow transition-all duration-300 overflow-hidden relative cursor-pointer ${
-          isArchived ? "opacity-70 hover:opacity-100" : ""
-        }`}
+        className={`group flex flex-col rounded-2xl bg-surface-dark border transition-all duration-300 overflow-hidden relative cursor-pointer hover:shadow-glow ${
+          project.color ? "" : "border-border-dark hover:border-primary/40"
+        } ${isArchived ? "opacity-70 hover:opacity-100" : ""}`}
+        style={
+          project.color
+            ? {
+                borderColor: `${project.color}30`,
+              }
+            : undefined
+        }
+        onMouseEnter={(e) => {
+          if (project.color) {
+            e.currentTarget.style.borderColor = `${project.color}60`;
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (project.color) {
+            e.currentTarget.style.borderColor = `${project.color}30`;
+          }
+        }}
       >
         <div
           className="h-36 w-full bg-cover bg-center relative"
           style={{
-            backgroundImage: `linear-gradient(180deg, rgba(9, 9, 11, 0) 0%, rgba(18, 18, 21, 1) 100%), url('https://images.unsplash.com/photo-1551650975-87deedd944c3?w=400&h=200&fit=crop')`,
+            backgroundImage: project.color
+              ? `linear-gradient(135deg, ${project.color}15 0%, ${project.color}05 50%, rgba(18, 18, 21, 1) 100%)`
+              : `linear-gradient(180deg, rgba(9, 9, 11, 0) 0%, rgba(18, 18, 21, 1) 100%), url('https://images.unsplash.com/photo-1551650975-87deedd944c3?w=400&h=200&fit=crop')`,
+            backgroundColor: project.color ? `${project.color}10` : undefined,
           }}
         >
+          {project.color && (
+            <div
+              className="absolute top-0 left-0 w-full h-1"
+              style={{ backgroundColor: project.color }}
+            />
+          )}
           {project.category && (
             <div className="absolute top-4 right-4 z-10">
               <span className="px-2 py-1 rounded-md bg-black/60 backdrop-blur border border-white/5 text-[10px] font-mono text-white/80 shadow-sm">

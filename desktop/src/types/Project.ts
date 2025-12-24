@@ -16,5 +16,6 @@ export type Project = {
   lastOpenedAt?: number;
   modules?: Module[]; // Sub-projects/modules within this project
   config?: ProjectConfig; // Project-specific configuration
+  color?: string; // Custom color for the project (hex color code)
 };
   
