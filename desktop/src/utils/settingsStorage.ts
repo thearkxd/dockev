@@ -7,6 +7,7 @@ const defaultSettings: Settings = {
   autoTechStackDetection: true,
   theme: "dark",
   customIdes: [],
+  defaultPackageManager: "npm",
   categories: [
     {
       id: "work",

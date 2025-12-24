@@ -87,10 +87,10 @@
 
 #### 3. Modül Yönetimi Geliştirmeleri
 
-- [ ] Modül düzenleme (isim, path değiştirme)
-- [ ] Modül birleştirme
-- [ ] Modül yeniden adlandırma
-- [ ] Modül için özel dev server komutları
+- [x] Modül düzenleme (isim, path değiştirme)
+- [x] Modül birleştirme
+- [x] Modül yeniden adlandırma
+- [x] Modül için özel dev server komutları
 
 #### 4. Arama ve Filtreleme
 

@@ -12,6 +12,7 @@ export type Settings = {
   autoTechStackDetection: boolean;
   theme: Theme;
   customIdes: IDE[];
+  defaultPackageManager?: "npm" | "yarn" | "pnpm";
   categories: Array<{
     id: string;
     name: string;

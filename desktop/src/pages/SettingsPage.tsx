@@ -156,6 +156,40 @@ export function SettingsPage() {
                     </div>
                   </div>
                 </div>
+                <div className="p-5 border-b border-border-dark/50 last:border-none flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-white text-base font-medium">
+                      Default Package Manager
+                    </span>
+                    <p className="text-text-secondary text-sm">
+                      Select the default package manager for running dev servers.
+                    </p>
+                  </div>
+                  <div className="relative min-w-[200px]">
+                    <select
+                      value={settings.defaultPackageManager || "npm"}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          defaultPackageManager: e.target.value as
+                            | "npm"
+                            | "yarn"
+                            | "pnpm",
+                        })
+                      }
+                      className="w-full appearance-none rounded-lg bg-background-dark text-white border border-border-dark focus:border-primary focus:ring-1 focus:ring-primary h-10 pl-3 pr-10 text-sm font-medium transition-all cursor-pointer hover:border-gray-500"
+                    >
+                      <option value="npm">npm</option>
+                      <option value="yarn">yarn</option>
+                      <option value="pnpm">pnpm</option>
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-text-secondary">
+                      <span className="material-symbols-outlined text-lg">
+                        unfold_more
+                      </span>
+                    </div>
+                  </div>
+                </div>
                 <div className="flex items-center justify-between gap-4 p-5 last:border-none">
                   <div className="flex flex-col gap-1.5">
                     <p className="text-white text-base font-medium">

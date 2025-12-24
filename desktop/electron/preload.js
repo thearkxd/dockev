@@ -9,8 +9,14 @@ contextBridge.exposeInMainWorld("dockevWindow", {
       ipcRenderer.invoke("launch:ide", projectPath, ide),
   },
   run: {
-    devServer: (projectPath, customCommand, envVars) =>
-      ipcRenderer.invoke("run:devServer", projectPath, customCommand, envVars),
+    devServer: (projectPath, customCommand, envVars, packageManager) =>
+      ipcRenderer.invoke(
+        "run:devServer",
+        projectPath,
+        customCommand,
+        envVars,
+        packageManager
+      ),
   },
   git: {
     getStatus: (projectPath) =>

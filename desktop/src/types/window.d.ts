@@ -14,7 +14,8 @@ declare global {
         devServer: (
           projectPath: string,
           customCommand?: string,
-          envVars?: Record<string, string>
+          envVars?: Record<string, string>,
+          packageManager?: "npm" | "yarn" | "pnpm"
         ) => Promise<boolean>;
       };
       git?: {

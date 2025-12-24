@@ -726,7 +726,8 @@ ipcMain.handle(
     _event: Electron.IpcMainInvokeEvent,
     projectPath: string,
     customCommand?: string,
-    envVars?: Record<string, string>
+    envVars?: Record<string, string>,
+    packageManager?: "npm" | "yarn" | "pnpm"
   ) => {
     return new Promise((resolve, reject) => {
       // Normalize path
@@ -736,13 +737,91 @@ ipcMain.handle(
       }
       normalizedPath = path.resolve(normalizedPath);
 
-      // If custom command is provided, use it
-      if (customCommand && customCommand.trim()) {
-        const parts = customCommand.trim().split(/\s+/);
-        const cmd = parts[0];
-        const args = parts.slice(1);
+      // Determine the command to run
+      let cmd: string;
+      let args: string[];
 
-        const child = spawn(cmd, args, {
+      if (customCommand && customCommand.trim()) {
+        // Use custom command if provided
+        const parts = customCommand.trim().split(/\s+/);
+        cmd = parts[0];
+        args = parts.slice(1);
+      } else {
+        // Use package manager from settings or default to npm
+        const pm = packageManager || "npm";
+        switch (pm) {
+          case "yarn":
+            cmd = "yarn";
+            args = ["dev"];
+            break;
+          case "pnpm":
+            cmd = "pnpm";
+            args = ["run", "dev"];
+            break;
+          case "npm":
+          default:
+            cmd = "npm";
+            args = ["run", "dev"];
+            break;
+        }
+      }
+
+      // Build the command string for terminal
+      const commandString = `${cmd} ${args.join(" ")}`;
+
+      // Platform-specific terminal commands
+      const isWindows = process.platform === "win32";
+      const isMac = process.platform === "darwin";
+      const isLinux = process.platform === "linux";
+
+      let terminalCmd: string;
+      let terminalArgs: string[];
+
+      if (isWindows) {
+        // Windows: start cmd /k "npm run dev"
+        terminalCmd = "cmd";
+        terminalArgs = ["/c", "start", "cmd", "/k", commandString];
+      } else if (isMac) {
+        // macOS: Use osascript to open Terminal with command
+        terminalCmd = "osascript";
+        // Escape single quotes for AppleScript
+        const escapedPath = normalizedPath.replace(/'/g, "\\'");
+        const escapedCommand = commandString.replace(/'/g, "\\'");
+        terminalArgs = [
+          "-e",
+          `tell application "Terminal" to do script "cd '${escapedPath}' && ${escapedCommand}"`,
+        ];
+      } else {
+        // Linux: x-terminal-emulator -e "bash -c 'cd ... && npm run dev; exec bash'"
+        terminalCmd = "x-terminal-emulator";
+        const escapedPath = normalizedPath.replace(/'/g, "'\\''");
+        terminalArgs = [
+          "-e",
+          `bash -c "cd '${escapedPath}' && ${commandString}; exec bash"`,
+        ];
+      }
+
+      console.log("Running dev server in terminal:");
+      console.log("Command:", terminalCmd);
+      console.log("Args:", terminalArgs);
+      console.log("Working directory:", normalizedPath);
+
+      const child = spawn(terminalCmd, terminalArgs, {
+          cwd: normalizedPath,
+        shell: false,
+          detached: true,
+          stdio: "ignore",
+          env: {
+            ...process.env,
+            ...envVars,
+          },
+        });
+
+        child.on("error", (error: NodeJS.ErrnoException) => {
+        console.error("Error running dev server in terminal:", error);
+        // Fallback: try running command directly if terminal fails
+        console.log("Falling back to direct command execution...");
+        const fallbackChild = spawn(cmd, args, {
           cwd: normalizedPath,
           shell: process.platform === "win32",
           detached: true,
@@ -753,64 +832,25 @@ ipcMain.handle(
           },
         });
 
-        child.on("error", (error: NodeJS.ErrnoException) => {
-          console.error("Error running custom dev server:", error);
+        fallbackChild.on("error", (fallbackError: NodeJS.ErrnoException) => {
+          console.error("Fallback also failed:", fallbackError);
           reject(
             new Error(
-              `Failed to run custom command: ${customCommand}\n${error.message}`
+              `Failed to run dev server: ${fallbackError.message}\n\nTried terminal command: ${terminalCmd} ${terminalArgs.join(" ")}\nTried direct command: ${cmd} ${args.join(" ")}`
             )
           );
         });
 
-        child.unref();
+        fallbackChild.unref();
         setTimeout(() => {
-          resolve(true);
-        }, 100);
-        return;
-      }
-
-      // Try npm first, then yarn, then pnpm
-      const commands = [
-        { cmd: "npm", args: ["run", "dev"] },
-        { cmd: "yarn", args: ["dev"] },
-        { cmd: "pnpm", args: ["run", "dev"] },
-      ];
-
-      let currentIndex = 0;
-
-      const tryNext = () => {
-        if (currentIndex >= commands.length) {
-          reject(new Error("No package manager found (npm/yarn/pnpm)"));
-          return;
-        }
-
-        const { cmd, args } = commands[currentIndex];
-        const child = spawn(cmd, args, {
-          cwd: normalizedPath,
-          detached: true,
-          stdio: "ignore",
-          shell: process.platform === "win32",
-          env: {
-            ...process.env,
-            ...envVars,
-          },
-        });
-
-        child.on("error", (error: NodeJS.ErrnoException) => {
-          if (error.code === "ENOENT") {
-            // Command not found, try next
-            currentIndex++;
-            tryNext();
-          } else {
-            reject(error);
-          }
-        });
-
-        child.unref();
         resolve(true);
-      };
+        }, 200);
+      });
 
-      tryNext();
+      child.unref();
+      setTimeout(() => {
+        resolve(true);
+      }, 200);
     });
   }
 );
@@ -1273,7 +1313,7 @@ ipcMain.handle(
           console.error("Error reading project directory:", err);
         }
 
-        resolve({
+      resolve({
           success: false,
           error: `Path does not exist: ${installPath}`,
         });
@@ -1566,7 +1606,7 @@ ipcMain.handle(
               if (deleteSource) {
                 try {
                   console.log("Deleting source directory:", normalizedSource);
-                  rmSync(normalizedSource, { recursive: true, force: true });
+                rmSync(normalizedSource, { recursive: true, force: true });
                   console.log("Source directory deleted successfully");
                 } catch (deleteError) {
                   console.error(

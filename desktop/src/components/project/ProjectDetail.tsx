@@ -329,37 +329,50 @@ export function ProjectDetail({
   };
 
   const handleRunModuleDevServer = async (module: Module) => {
-    if (onRunDevServer) {
-      try {
-        // Construct full module path
-        let modulePath = module.path;
-        if (
-          module.path.startsWith(".") ||
-          (!module.path.includes(":") && navigator.platform.includes("Win"))
-        ) {
-          const separator = project.path.includes("\\") ? "\\" : "/";
-          const cleanModulePath = module.path
-            .replace(/^\.\//, "")
-            .replace(/^\./, "");
-          modulePath = `${project.path}${separator}${cleanModulePath}`;
-        }
-
-        // If module has custom dev server command, use it
-        if (module.devServerCommand && window.dockevWindow?.run?.devServer) {
-          await window.dockevWindow.run.devServer(
-            modulePath,
-            module.devServerCommand
-          );
-        } else {
-          // Use default dev server
-          await onRunDevServer(modulePath);
-        }
-      } catch (error) {
-        console.error("Error running module dev server:", error);
-        alert(
-          `Failed to start dev server for ${module.name}. Make sure you have npm/yarn/pnpm installed.`
-        );
+    try {
+      // Construct full module path
+      let modulePath = module.path;
+      if (
+        module.path.startsWith(".") ||
+        (!module.path.includes(":") && navigator.platform.includes("Win"))
+      ) {
+        const separator = project.path.includes("\\") ? "\\" : "/";
+        const cleanModulePath = module.path
+          .replace(/^\.\//, "")
+          .replace(/^\./, "");
+        modulePath = `${project.path}${separator}${cleanModulePath}`;
       }
+
+      // Get default package manager from settings
+      const { settingsStorage } = await import("../../utils/settingsStorage");
+      const settings = settingsStorage.getSettings();
+      const packageManager = settings.defaultPackageManager || "npm";
+
+      // If module has custom dev server command, use it
+      if (module.devServerCommand && window.dockevWindow?.run?.devServer) {
+        await window.dockevWindow.run.devServer(
+          modulePath,
+          module.devServerCommand,
+          undefined,
+          packageManager
+        );
+      } else if (window.dockevWindow?.run?.devServer) {
+        // Use default dev server with package manager from settings
+        await window.dockevWindow.run.devServer(
+          modulePath,
+          undefined,
+          undefined,
+          packageManager
+        );
+      } else if (onRunDevServer) {
+        // Fallback to parent handler
+        await onRunDevServer(modulePath);
+      }
+    } catch (error) {
+      console.error("Error running module dev server:", error);
+      alert(
+        `Failed to start dev server for ${module.name}. Make sure you have npm/yarn/pnpm installed.`
+      );
     }
   };
 

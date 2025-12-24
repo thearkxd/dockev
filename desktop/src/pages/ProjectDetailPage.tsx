@@ -75,10 +75,16 @@ export function ProjectDetailPage({
   const handleRunDevServer = async (projectPath: string) => {
     try {
       if (window.dockevWindow?.run?.devServer) {
+        // Get default package manager from settings
+        const { settingsStorage } = await import("../utils/settingsStorage");
+        const settings = settingsStorage.getSettings();
+        const packageManager = settings.defaultPackageManager || "npm";
+
         await window.dockevWindow.run.devServer(
           projectPath,
           project.config?.devServerCommand,
-          project.config?.environmentVariables
+          project.config?.environmentVariables,
+          packageManager
         );
       }
     } catch (error) {
