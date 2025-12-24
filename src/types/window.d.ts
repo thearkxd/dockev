@@ -49,6 +49,13 @@ declare global {
           confidence: number;
         }>
       >;
+      installedIDEs: () => Promise<
+        Array<{
+          id: string;
+          name: string;
+          command: string;
+        }>
+      >;
     };
     dockevProject: {
       getDetails: (
