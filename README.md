@@ -77,6 +77,7 @@ Ever found yourself:
    ```
 
 4. **Build for production**
+
    ```bash
    npm run build
    ```
@@ -166,6 +167,62 @@ dockev/
 ## 🎨 Screenshots
 
 _(Add screenshots here when available)_
+
+---
+
+## ⚠️ Known Limitations
+
+- **First Launch**: On first launch, Dockev will detect installed IDEs automatically. Make sure your IDEs are in your system PATH.
+- **Large Projects**: Projects with thousands of files may take longer to scan for modules and tech stack detection.
+- **Git Integration**: Git features require Git to be installed and accessible from the command line.
+- **IDE Detection**: IDE detection works best when IDEs are installed in standard locations or added to system PATH.
+- **Platform Differences**: Some features may behave slightly differently across Windows, macOS, and Linux due to platform-specific implementations.
+
+---
+
+## 🔧 Troubleshooting
+
+### IDE Not Detected
+
+- Ensure your IDE is installed and accessible from the command line
+- Check that the IDE command is in your system PATH
+- Use "Detect IDEs" button in Settings to manually trigger detection
+- Add custom IDE manually in Settings if automatic detection fails
+
+### Projects Not Loading
+
+- Verify the project path is correct and accessible
+- Check file system permissions
+- Ensure the project folder exists and is not corrupted
+
+### Dev Server Not Starting
+
+- Verify the package manager (npm/yarn/pnpm) is installed
+- Check that the dev script exists in package.json
+- Review custom dev server commands in project config
+- Check environment variables are set correctly
+
+### Git Status Not Showing
+
+- Ensure Git is installed: `git --version`
+- Verify the project is a Git repository: `git status`
+- Check Git remote URL is configured correctly
+
+---
+
+## 🛠️ Building for Production
+
+To build Dockev for production:
+
+```bash
+# Build the React app
+npm run build
+
+# Build Electron app (requires electron-builder)
+npm run build:electron
+```
+
+**Note**: `electron-builder` configuration is not included by default. You'll need to add an `electron-builder` configuration to `package.json` or create an `electron-builder.yml` file for platform-specific builds.
 
 ---
 
