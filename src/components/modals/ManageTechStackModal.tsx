@@ -95,8 +95,6 @@ export function ManageTechStackModal({
     } else {
       setIsAnimating(false);
     }
-    // Modal açıldığında form state'ini resetlemek için gerekli
-    // eslint-disable-next-line react-compiler/react-compiler
   }, [isOpen, project]);
 
   // Handle ESC key to close modal
