@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import type { Project } from "../types/Project";
+import type { Project } from "../../types/Project";
 
 interface SpotlightProps {
   isOpen: boolean;
@@ -58,6 +58,11 @@ export function Spotlight({ isOpen, onClose, projects }: SpotlightProps) {
     }
   }, [isOpen]);
 
+  const handleSelectProject = (project: Project) => {
+    navigate(`/project/${project.id}`);
+    onClose();
+  };
+
   // Handle keyboard navigation
   useEffect(() => {
     if (!isOpen) return;
@@ -95,11 +100,6 @@ export function Spotlight({ isOpen, onClose, projects }: SpotlightProps) {
       }
     }
   }, [selectedIndex]);
-
-  const handleSelectProject = (project: Project) => {
-    navigate(`/project/${project.id}`);
-    onClose();
-  };
 
   if (!isOpen) return null;
 
