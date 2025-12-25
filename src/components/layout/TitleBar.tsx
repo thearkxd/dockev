@@ -22,7 +22,7 @@ export function TitleBar({
   projectName,
   showSearch = false,
   showActions = false,
-  projects = [],
+  // projects = [],
 }: TitleBarProps) {
   const navigate = useNavigate();
 

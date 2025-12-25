@@ -830,7 +830,7 @@ ipcMain.handle(
 			// Platform-specific terminal commands
 			const isWindows = process.platform === "win32";
 			const isMac = process.platform === "darwin";
-			const isLinux = process.platform === "linux";
+			// const isLinux = process.platform === "linux";
 
 			let terminalCmd: string;
 			let terminalArgs: string[];
