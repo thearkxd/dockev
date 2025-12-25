@@ -14,10 +14,11 @@ describe('settingsStorage', () => {
     it('should return default settings when none exist', () => {
       localStorage.removeItem('dockev_settings');
       const settings = settingsStorage.getSettings();
-      expect(settings.defaultIde).toBe('vscode');
+      expect(settings.defaultIde).toBe('vscode'); // Default IDE can still be set, but not in getAllIDEs
       expect(settings.autoTechStackDetection).toBe(true);
       expect(settings.theme).toBe('dark');
       expect(settings.categories).toHaveLength(5);
+      expect(settings.customIdes).toEqual([]); // No default IDEs, only custom ones
     });
   });
 
@@ -102,15 +103,22 @@ describe('settingsStorage', () => {
   });
 
   describe('getAllIDEs', () => {
-    it('should return default IDEs', () => {
+    it('should return empty array when no custom IDEs are added', () => {
+      // Clear any existing custom IDEs
+      const settings = settingsStorage.getSettings();
+      settings.customIdes = [];
+      settingsStorage.saveSettings(settings);
+      
       const ides = settingsStorage.getAllIDEs();
-      expect(ides.length).toBeGreaterThanOrEqual(3);
-      expect(ides.some((ide) => ide.id === 'vscode')).toBe(true);
-      expect(ides.some((ide) => ide.id === 'cursor')).toBe(true);
-      expect(ides.some((ide) => ide.id === 'webstorm')).toBe(true);
+      expect(ides).toEqual([]);
     });
 
-    it('should include custom IDEs', () => {
+    it('should return only custom IDEs', () => {
+      // Clear any existing custom IDEs
+      const settings = settingsStorage.getSettings();
+      settings.customIdes = [];
+      settingsStorage.saveSettings(settings);
+      
       const customIDE: IDE = {
         id: 'custom-ide',
         name: 'Custom IDE',
@@ -118,7 +126,15 @@ describe('settingsStorage', () => {
       };
       settingsStorage.addCustomIDE(customIDE);
       const ides = settingsStorage.getAllIDEs();
+      expect(ides).toHaveLength(1);
       expect(ides).toContainEqual(customIDE);
+    });
+
+    it('should not include default IDEs', () => {
+      const ides = settingsStorage.getAllIDEs();
+      expect(ides.some((ide) => ide.id === 'vscode')).toBe(false);
+      expect(ides.some((ide) => ide.id === 'cursor')).toBe(false);
+      expect(ides.some((ide) => ide.id === 'webstorm')).toBe(false);
     });
   });
 
