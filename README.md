@@ -166,9 +166,11 @@ dockev/
 
 ## 🎨 Screenshots
 
-_(Add screenshots here when available)_
-
----
+<img src="https://raw.githubusercontent.com/thearkxd/dockev/main/screenshots/screenshot_1.png" alt="Dockev Screenshot">
+<img src="https://raw.githubusercontent.com/thearkxd/dockev/main/screenshots/screenshot_2.png" alt="Dockev Screenshot">
+<img src="https://raw.githubusercontent.com/thearkxd/dockev/main/screenshots/screenshot_3.png" alt="Dockev Screenshot">
+<img src="https://raw.githubusercontent.com/thearkxd/dockev/main/screenshots/screenshot_4.png" alt="Dockev Screenshot">
+<img src="https://raw.githubusercontent.com/thearkxd/dockev/main/screenshots/screenshot_5.png" alt="Dockev Screenshot">
 
 ## ⚠️ Known Limitations
 
