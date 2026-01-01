@@ -4,6 +4,11 @@ contextBridge.exposeInMainWorld("dockevWindow", {
 	minimize: () => ipcRenderer.invoke("window:minimize"),
 	maximize: () => ipcRenderer.invoke("window:maximize"),
 	close: () => ipcRenderer.invoke("window:close"),
+	widget: {
+		toggle: () => ipcRenderer.invoke("widget:toggle"),
+		resize: (width, height) => ipcRenderer.invoke("widget:resize", width, height),
+		openDashboard: () => ipcRenderer.invoke("widget:openDashboard")
+	},
 	launch: {
 		ide: (projectPath, ide) =>
 			ipcRenderer.invoke("launch:ide", projectPath, ide)

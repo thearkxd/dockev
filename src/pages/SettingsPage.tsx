@@ -1,3 +1,4 @@
+import { Monitor, Save, AlertCircle, Check, X, LayoutGrid } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -200,6 +201,37 @@ export function SettingsPage() {
 							</p>
 						</div>
 
+						{/* Desktop Widget */}
+						<section className="flex flex-col gap-5">
+							<div className="flex items-center justify-between">
+								<h3 className="text-white text-lg font-semibold tracking-tight flex items-center gap-2">
+									<LayoutGrid className="text-primary" size={20} />
+									Desktop Widget
+								</h3>
+							</div>
+							<div className="bg-surface-dark/40 rounded-2xl border border-border-dark p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+								<div className="flex flex-col gap-1.5">
+									<span className="text-white text-base font-medium">
+										Quick Access Widget
+									</span>
+									<p className="text-text-secondary text-sm">
+										Enable the quick access widget to easily manage your projects from your desktop.
+									</p>
+								</div>
+								<button
+									onClick={() => {
+										if (window.dockevWindow?.widget?.toggle) {
+											window.dockevWindow.widget.toggle();
+										}
+									}}
+									className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-md transition-colors text-sm font-medium"
+								>
+									<LayoutGrid size={16} />
+									Open Widget
+								</button>
+							</div>
+						</section>
+
 						{/* Environment Section */}
 						<section className="flex flex-col gap-5">
 							<div className="flex items-center justify-between">
@@ -300,11 +332,10 @@ export function SettingsPage() {
 											/>
 											<span
 												aria-hidden="true"
-												className={`pointer-events-none inline-block h-5 w-5 translate-x-1 rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-													settings.autoTechStackDetection
-														? "translate-x-6"
-														: "translate-x-1"
-												}`}
+												className={`pointer-events-none inline-block h-5 w-5 translate-x-1 rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${settings.autoTechStackDetection
+													? "translate-x-6"
+													: "translate-x-1"
+													}`}
 											></span>
 										</label>
 									</div>
@@ -347,8 +378,7 @@ export function SettingsPage() {
 															});
 															setSettings(settingsStorage.getSettings());
 															toast.success(
-																`Detected ${newIDEs.length} new IDE${
-																	newIDEs.length > 1 ? "s" : ""
+																`Detected ${newIDEs.length} new IDE${newIDEs.length > 1 ? "s" : ""
 																}!`
 															);
 														} else {

@@ -45,6 +45,14 @@ Ever found yourself:
 - **📝 Project Details**: View README, package.json info, and project statistics
 - **🎯 Context Menus**: Right-click on projects for quick actions
 
+### 🖥️ Desktop Widget (New!)
+- **Alt+D to Toggle**: Quickly access your projects from anywhere with a custom global shortcut
+- **Always Accessible**: Runs as a lightweight, transparent overlay on your desktop
+- **Persistent**: Remembers its position on your screen
+- **Quick Actions**: 
+  - Open projects in Terminal or File Explorer with one click.
+  - Pin the widget to keep it visible while you work.
+
 ---
 
 ## 🚀 Getting Started

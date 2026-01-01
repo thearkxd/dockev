@@ -44,6 +44,14 @@ Hiç şunları yaşadınız mı:
 - **📝 Proje Detayları**: README, package.json bilgilerini ve proje istatistiklerini görüntüleyin
 - **🎯 Bağlam Menüleri**: Hızlı işlemler için projeler üzerinde sağ tıklayın
 
+### 🖥️ Masaüstü Widget (Yeni!)
+- **Alt+D ile Aç/Kapa**: Özel global kısayol ile projelerinize her yerden hızlıca erişin
+- **Her Zaman Erişilebilir**: Masaüstünüzde hafif, şeffaf bir katman olarak çalışır
+- **Kalıcı**: Ekrandaki konumunu hatırlar
+- **Hızlı İşlemler**: 
+  - Projeleri tek tıkla Terminal veya Dosya Gezgini'nde açın.
+  - Çalışırken görünür kalması için pencereyi sabitleyin.
+
 ---
 
 ## 🚀 Başlangıç
@@ -58,7 +66,7 @@ Hiç şunları yaşadınız mı:
 
 1. **Depoyu klonlayın**
    ```bash
-   git clone https://github.com/yourusername/dockev.git
+   git clone https://github.com/thearkxd/dockev.git
    cd dockev
    ```
 

@@ -55,11 +55,8 @@ export const Sidebar = ({
 						isCollapsed ? "flex-col" : ""
 					}`}
 				>
-					<div className="relative flex items-center justify-center rounded-lg size-9 bg-primary/10 text-primary border border-primary/20 flex-shrink-0">
-						<span className="material-symbols-outlined text-[20px]">
-							terminal
-						</span>
-						<div className="absolute -bottom-1 -right-1 size-2.5 bg-green-500 rounded-full border-2 border-sidebar-dark"></div>
+					<div className="relative flex items-center justify-center rounded-lg size-12 bg-primary/10 text-primary border border-primary/20 flex-shrink-0">
+						<img src="/dockev_logo.png" alt="Dockev Logo" className="w-full h-full rounded-lg" />
 					</div>
 					{!isCollapsed && (
 						<div className="flex flex-col min-w-0 flex-1">

@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { WidgetPage } from "./pages/WidgetPage";
 import { PageTransition } from "./components/shared/PageTransition";
 import { Spotlight } from "./components/shared/Spotlight";
 import type { Project } from "./types/Project";
@@ -237,7 +238,7 @@ export default function App() {
 	}
 
 	return (
-		<BrowserRouter>
+		<HashRouter>
 			<div className="bg-background-dark text-text-primary font-display antialiased overflow-hidden selection:bg-primary/20 selection:text-primary">
 				<PageTransition>
 					<Routes>
@@ -265,6 +266,7 @@ export default function App() {
 							}
 						/>
 						<Route path="/settings" element={<SettingsPage />} />
+						<Route path="/widget" element={<WidgetPage />} />
 						<Route path="*" element={<Navigate to="/" replace />} />
 					</Routes>
 				</PageTransition>
@@ -297,6 +299,6 @@ export default function App() {
 					}}
 				/>
 			</div>
-		</BrowserRouter>
+		</HashRouter>
 	);
 }

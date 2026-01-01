@@ -1,4 +1,4 @@
-export {};
+export { };
 
 declare global {
   interface Window {
@@ -7,6 +7,11 @@ declare global {
       maximize: () => void;
       close: () => void;
       openExternal: (url: string) => void;
+      widget?: {
+        toggle: () => void;
+        resize: (width: number, height: number) => void;
+        openDashboard: () => void;
+      };
       launch?: {
         ide: (projectPath: string, ide: string) => Promise<boolean>;
       };

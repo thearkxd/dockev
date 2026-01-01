@@ -1,4 +1,14 @@
-import { app, BrowserWindow, ipcMain, Menu, dialog, shell } from "electron";
+import {
+	app,
+	BrowserWindow,
+	ipcMain,
+	Menu,
+	dialog,
+	shell,
+	globalShortcut,
+	Tray,
+	nativeImage
+} from "electron";
 import { fileURLToPath } from "url";
 import path from "path";
 import { spawn, execSync } from "child_process";
@@ -7,6 +17,7 @@ import {
 	existsSync,
 	readdirSync,
 	readFileSync,
+	writeFileSync,
 	statSync,
 	renameSync,
 	mkdirSync,
@@ -24,11 +35,18 @@ Menu.setApplicationMenu(null);
 
 let mainWindow: BrowserWindow | null = null;
 
+const isDev = !app.isPackaged;
+let isQuitting = false;
+
+// Icon path
+const iconPath = path.join(__dirname, "../public/dockev_logo_light_wbg.png");
+
 function createWindow() {
 	mainWindow = new BrowserWindow({
 		width: 1200,
 		height: 800,
 		frame: false,
+		icon: iconPath,
 		backgroundColor: "#09090b",
 		webPreferences: {
 			preload: path.join(__dirname, "preload.js"),
@@ -38,10 +56,6 @@ function createWindow() {
 		}
 	});
 
-	// Development modunda her zaman localhost'u kullan
-	// Electron dev modunda çalışıyorsa localhost kullan
-	const isDev = !app.isPackaged;
-
 	if (isDev) {
 		const url = "http://localhost:5173";
 		console.log("Loading URL:", url);
@@ -49,12 +63,10 @@ function createWindow() {
 			console.error("Error loading URL:", error);
 		});
 
-		// Log when page finishes loading
 		mainWindow.webContents.on("did-finish-load", () => {
 			console.log("Page finished loading");
 		});
 
-		// Log any errors
 		mainWindow.webContents.on(
 			"did-fail-load",
 			(event, errorCode, errorDescription) => {
@@ -62,9 +74,131 @@ function createWindow() {
 			}
 		);
 	} else {
-		mainWindow.loadFile(path.join(__dirname, "./dist/index.html"));
+		// In production, the dist folder should be at the root, so ../dist relative to electron/main.ts
+		mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
 	}
 }
+
+// Widget Configuration
+const WIDGET_CONFIG_FILE = path.join(app.getPath("userData"), "widget-config.json");
+
+interface WidgetConfig {
+	x?: number;
+	y?: number;
+}
+
+function loadWidgetConfig(): WidgetConfig {
+	try {
+		if (existsSync(WIDGET_CONFIG_FILE)) {
+			const data = readFileSync(WIDGET_CONFIG_FILE, "utf-8");
+			return JSON.parse(data);
+		}
+	} catch (error) {
+		console.error("Failed to load widget config:", error);
+	}
+	return {};
+}
+
+function saveWidgetConfig(config: WidgetConfig) {
+	try {
+		writeFileSync(WIDGET_CONFIG_FILE, JSON.stringify(config));
+	} catch (error) {
+		console.error("Failed to save widget config:", error);
+	}
+}
+
+let widgetWindow: BrowserWindow | null = null;
+let saveTimeout: NodeJS.Timeout | null = null;
+
+function createWidgetWindow() {
+	if (widgetWindow) {
+		if (widgetWindow.isMinimized()) widgetWindow.restore();
+		widgetWindow.show();
+		return;
+	}
+
+	const config = loadWidgetConfig();
+
+	widgetWindow = new BrowserWindow({
+		width: 350,
+		height: 500,
+		x: config.x,
+		y: config.y,
+		frame: false,
+		transparent: true,
+		resizable: false,
+		skipTaskbar: true,
+		icon: iconPath,
+		webPreferences: {
+			preload: path.join(__dirname, "preload.js"),
+			contextIsolation: true,
+			nodeIntegration: false,
+			webSecurity: true
+		}
+	});
+
+	if (isDev) {
+		const url = "http://localhost:5173/#/widget";
+		widgetWindow.loadURL(url);
+	} else {
+		widgetWindow.loadFile(path.join(__dirname, "./dist/index.html"), {
+			hash: "widget"
+		});
+	}
+
+	// Save position on move with debounce
+	widgetWindow.on("move", () => {
+		if (saveTimeout) clearTimeout(saveTimeout);
+		saveTimeout = setTimeout(() => {
+			if (widgetWindow && !widgetWindow.isDestroyed()) {
+				const [x, y] = widgetWindow.getPosition();
+				saveWidgetConfig({ x, y });
+			}
+		}, 500); // Debounce for 500ms
+	});
+
+	// Hide instead of close
+	widgetWindow.on("close", (event) => {
+		if (!isQuitting) {
+			event.preventDefault();
+			widgetWindow?.hide();
+		}
+	});
+
+	widgetWindow.on("blur", () => {
+		// Optional: hide on blur
+		// widgetWindow?.hide();
+	});
+}
+
+ipcMain.handle("widget:toggle", () => {
+	if (!widgetWindow) {
+		createWidgetWindow();
+	} else {
+		if (widgetWindow.isVisible()) {
+			widgetWindow.hide();
+		} else {
+			widgetWindow.show();
+		}
+	}
+});
+
+// Expose widget resize if needed dynamically
+ipcMain.handle("widget:resize", (_event, width: number, height: number) => {
+	if (widgetWindow) {
+		widgetWindow.setSize(width, height);
+	}
+});
+
+ipcMain.handle("widget:openDashboard", () => {
+	if (mainWindow) {
+		if (mainWindow.isMinimized()) mainWindow.restore();
+		mainWindow.show();
+		mainWindow.focus();
+	} else {
+		createWindow();
+	}
+});
 
 ipcMain.handle(
 	"window:openExternal",
@@ -73,21 +207,24 @@ ipcMain.handle(
 	}
 );
 
-ipcMain.handle("window:minimize", () => {
-	mainWindow?.minimize();
+ipcMain.handle("window:minimize", (event) => {
+	const win = BrowserWindow.fromWebContents(event.sender);
+	win?.minimize();
 });
 
-ipcMain.handle("window:maximize", () => {
-	if (!mainWindow) return;
-	if (mainWindow.isMaximized()) {
-		mainWindow.unmaximize();
+ipcMain.handle("window:maximize", (event) => {
+	const win = BrowserWindow.fromWebContents(event.sender);
+	if (!win) return;
+	if (win.isMaximized()) {
+		win.unmaximize();
 	} else {
-		mainWindow.maximize();
+		win.maximize();
 	}
 });
 
-ipcMain.handle("window:close", () => {
-	mainWindow?.close();
+ipcMain.handle("window:close", (event) => {
+	const win = BrowserWindow.fromWebContents(event.sender);
+	win?.close();
 });
 
 ipcMain.handle("dialog:selectFolder", async () => {
@@ -894,8 +1031,7 @@ ipcMain.handle(
 					console.error("Fallback also failed:", fallbackError);
 					reject(
 						new Error(
-							`Failed to run dev server: ${
-								fallbackError.message
+							`Failed to run dev server: ${fallbackError.message
 							}\n\nTried terminal command: ${terminalCmd} ${terminalArgs.join(
 								" "
 							)}\nTried direct command: ${cmd} ${args.join(" ")}`
@@ -1524,9 +1660,8 @@ ipcMain.handle(
 						} catch (error) {
 							resolve({
 								success: false,
-								error: `Cannot create destination directory: ${
-									error instanceof Error ? error.message : String(error)
-								}`
+								error: `Cannot create destination directory: ${error instanceof Error ? error.message : String(error)
+									}`
 							});
 							return;
 						}
@@ -1594,9 +1729,9 @@ ipcMain.handle(
 					const sameDisk =
 						process.platform === "win32"
 							? normalizedSource[0].toLowerCase() ===
-							  normalizedDest[0].toLowerCase()
+							normalizedDest[0].toLowerCase()
 							: path.parse(normalizedSource).root ===
-							  path.parse(normalizedDest).root;
+							path.parse(normalizedDest).root;
 
 					// Use fast rename only if same disk, not excluding node_modules, AND deleteSource is true
 					// If deleteSource is false, we need to use copy+delete to preserve source
@@ -1610,9 +1745,8 @@ ipcMain.handle(
 						} catch (error) {
 							resolve({
 								success: false,
-								error: `Move failed: ${
-									error instanceof Error ? error.message : String(error)
-								}`
+								error: `Move failed: ${error instanceof Error ? error.message : String(error)
+									}`
 							});
 							return;
 						}
@@ -1696,9 +1830,8 @@ ipcMain.handle(
 
 							resolve({
 								success: false,
-								error: `Move failed: ${
-									error instanceof Error ? error.message : String(error)
-								}`
+								error: `Move failed: ${error instanceof Error ? error.message : String(error)
+									}`
 							});
 						}
 					}
@@ -1716,6 +1849,39 @@ ipcMain.handle(
 	}
 );
 
+
 app.whenReady().then(() => {
 	createWindow();
+
+	globalShortcut.register('Alt+D', () => {
+		if (!widgetWindow) {
+			createWidgetWindow();
+		} else {
+			if (widgetWindow.isVisible()) {
+				widgetWindow.hide();
+			} else {
+				widgetWindow.show();
+			}
+		}
+	});
+
+	app.on('activate', () => {
+		if (BrowserWindow.getAllWindows().length === 0) {
+			createWindow();
+		}
+	});
+});
+
+app.on('window-all-closed', () => {
+	if (process.platform !== 'darwin') {
+		app.quit();
+	}
+});
+
+app.on('will-quit', () => {
+	globalShortcut.unregisterAll();
+});
+
+app.on('before-quit', () => {
+	isQuitting = true;
 });

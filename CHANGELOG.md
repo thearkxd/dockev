@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+## [0.2.0]
+
+### Added
+
+- **Desktop Widget**: Quick access overlay with `Alt+D` shortcut
+- **Widget Quick Actions**: Search projects, open in Terminal/Folder
+- **Widget Pinning**: Ability to pin the widget to the desktop
+- **Settings Integration**: "Open Widget" button in Settings page
+- **Persisted State**: Widget saves and restores its position
 - Project description field
 - Custom project colors
 - Light/dark theme support
@@ -20,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Branding**: Updated application icons and logos
 - Improved project card UI
 - Enhanced module detection
 - Better error handling
@@ -30,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project folder deletion after move operation
 - Module path handling improvements
 
-## [0.1.0] - 2024-XX-XX
+## [0.1.0]
 
 ### Added
 
