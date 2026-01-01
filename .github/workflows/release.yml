@@ -36,3 +36,6 @@ jobs:
         with:
           name: dockev-${{ matrix.os }}
           path: release/
+    env:
+     GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    
