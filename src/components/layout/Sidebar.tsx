@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { settingsStorage } from "../../utils/settingsStorage";
 import type { Project } from "../../types/Project";
+import logo from "@/assets/dockev_logo.png";
 
 interface SidebarProps {
 	onNewProjectClick?: () => void;
@@ -41,22 +42,19 @@ export const Sidebar = ({
 
 	return (
 		<aside
-			className={`flex flex-col justify-between bg-sidebar-dark border-r border-border-dark/50 flex-shrink-0 h-full relative z-30 transition-all duration-300 ${
-				isCollapsed ? "w-[72px]" : "w-[280px]"
-			}`}
+			className={`flex flex-col justify-between bg-sidebar-dark border-r border-border-dark/50 flex-shrink-0 h-full relative z-30 transition-all duration-300 ${isCollapsed ? "w-[72px]" : "w-[280px]"
+				}`}
 		>
 			<div
-				className={`flex flex-col gap-8 p-6 ${
-					isCollapsed ? "items-center" : ""
-				}`}
+				className={`flex flex-col gap-8 p-6 ${isCollapsed ? "items-center" : ""
+					}`}
 			>
 				<div
-					className={`flex items-center gap-3.5 relative ${
-						isCollapsed ? "flex-col" : ""
-					}`}
+					className={`flex items-center gap-3.5 relative ${isCollapsed ? "flex-col" : ""
+						}`}
 				>
 					<div className="relative flex items-center justify-center rounded-lg size-12 bg-primary/10 text-primary border border-primary/20 flex-shrink-0">
-						<img src="/dockev_logo.png" alt="Dockev Logo" className="w-full h-full rounded-lg" />
+						<img src={logo} alt="Dockev Logo" className="w-full h-full rounded-lg" />
 					</div>
 					{!isCollapsed && (
 						<div className="flex flex-col min-w-0 flex-1">
@@ -70,9 +68,8 @@ export const Sidebar = ({
 					)}
 					<button
 						onClick={() => setIsCollapsed(!isCollapsed)}
-						className={`p-1.5 rounded-md hover:bg-white/5 text-text-secondary hover:text-white transition-colors ${
-							isCollapsed ? "mt-2" : "absolute top-0 right-0"
-						}`}
+						className={`p-1.5 rounded-md hover:bg-white/5 text-text-secondary hover:text-white transition-colors ${isCollapsed ? "mt-2" : "absolute top-0 right-0"
+							}`}
 						title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
 					>
 						<span className="material-symbols-outlined text-[18px]">
@@ -88,17 +85,15 @@ export const Sidebar = ({
 					)}
 					<button
 						onClick={() => handleCategoryClick("all")}
-						className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group relative ${
-							activeCategory === "all"
-								? "bg-primary/10 text-primary border border-primary/10 shadow-glow"
-								: "text-text-secondary hover:bg-white/5 hover:text-white"
-						} ${isCollapsed ? "justify-center w-full" : ""}`}
+						className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group relative ${activeCategory === "all"
+							? "bg-primary/10 text-primary border border-primary/10 shadow-glow"
+							: "text-text-secondary hover:bg-white/5 hover:text-white"
+							} ${isCollapsed ? "justify-center w-full" : ""}`}
 						title={isCollapsed ? "All Projects" : undefined}
 					>
 						<span
-							className={`material-symbols-outlined flex-shrink-0 ${
-								isCollapsed ? "text-[24px]" : "text-[20px]"
-							}`}
+							className={`material-symbols-outlined flex-shrink-0 ${isCollapsed ? "text-[24px]" : "text-[20px]"
+								}`}
 						>
 							dashboard
 						</span>
@@ -122,26 +117,24 @@ export const Sidebar = ({
 							<button
 								key={category.id}
 								onClick={() => handleCategoryClick(category.name)}
-								className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group relative ${
-									activeCategory === category.name
-										? "bg-primary/10 text-primary border border-primary/10 shadow-glow"
-										: "text-text-secondary hover:bg-white/5 hover:text-white"
-								} ${isCollapsed ? "justify-center w-full" : ""}`}
+								className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group relative ${activeCategory === category.name
+									? "bg-primary/10 text-primary border border-primary/10 shadow-glow"
+									: "text-text-secondary hover:bg-white/5 hover:text-white"
+									} ${isCollapsed ? "justify-center w-full" : ""}`}
 								title={isCollapsed ? category.name : undefined}
 								style={
 									activeCategory === category.name
 										? {
-												borderColor: `${category.color}40`,
-												backgroundColor: `${category.color}10`,
-												color: category.color
-										  }
+											borderColor: `${category.color}40`,
+											backgroundColor: `${category.color}10`,
+											color: category.color
+										}
 										: {}
 								}
 							>
 								<span
-									className={`material-symbols-outlined flex-shrink-0 transition-colors ${
-										isCollapsed ? "text-[24px]" : "text-[20px]"
-									}`}
+									className={`material-symbols-outlined flex-shrink-0 transition-colors ${isCollapsed ? "text-[24px]" : "text-[20px]"
+										}`}
 									style={
 										activeCategory === category.name
 											? { color: category.color }
@@ -180,26 +173,24 @@ export const Sidebar = ({
 							<button
 								key={category.id}
 								onClick={() => handleCategoryClick("Archived")}
-								className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group relative ${
-									activeCategory === "Archived"
-										? "bg-primary/10 text-primary border border-primary/10 shadow-glow"
-										: "text-text-secondary hover:bg-white/5 hover:text-white"
-								} ${isCollapsed ? "justify-center w-full" : ""}`}
+								className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group relative ${activeCategory === "Archived"
+									? "bg-primary/10 text-primary border border-primary/10 shadow-glow"
+									: "text-text-secondary hover:bg-white/5 hover:text-white"
+									} ${isCollapsed ? "justify-center w-full" : ""}`}
 								title={isCollapsed ? category.name : undefined}
 								style={
 									activeCategory === "Archived"
 										? {
-												borderColor: `${category.color}40`,
-												backgroundColor: `${category.color}10`,
-												color: category.color
-										  }
+											borderColor: `${category.color}40`,
+											backgroundColor: `${category.color}10`,
+											color: category.color
+										}
 										: {}
 								}
 							>
 								<span
-									className={`material-symbols-outlined flex-shrink-0 transition-colors ${
-										isCollapsed ? "text-[24px]" : "text-[20px]"
-									}`}
+									className={`material-symbols-outlined flex-shrink-0 transition-colors ${isCollapsed ? "text-[24px]" : "text-[20px]"
+										}`}
 									style={
 										activeCategory === "Archived"
 											? { color: category.color }
@@ -232,15 +223,13 @@ export const Sidebar = ({
 				</nav>
 			</div>
 			<div
-				className={`p-6 border-t border-border-dark/50 flex flex-col gap-6 ${
-					isCollapsed ? "items-center" : ""
-				}`}
+				className={`p-6 border-t border-border-dark/50 flex flex-col gap-6 ${isCollapsed ? "items-center" : ""
+					}`}
 			>
 				<button
 					onClick={onNewProjectClick}
-					className={`group flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg h-9 px-4 bg-white text-black hover:bg-gray-200 transition-colors text-[13px] font-semibold shadow-md relative ${
-						isCollapsed ? "px-2" : ""
-					}`}
+					className={`group flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg h-9 px-4 bg-white text-black hover:bg-gray-200 transition-colors text-[13px] font-semibold shadow-md relative ${isCollapsed ? "px-2" : ""
+						}`}
 					title={isCollapsed ? "New Project" : undefined}
 				>
 					<span className="material-symbols-outlined text-[18px]">add</span>

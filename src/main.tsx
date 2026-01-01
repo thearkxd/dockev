@@ -16,10 +16,16 @@ if (!rootElement) {
   throw new Error("Root element not found");
 }
 
+import { HashRouter } from "react-router-dom";
+
+// ...
+
 console.log("Rendering App component...");
 createRoot(rootElement).render(
   <StrictMode>
-    <App />
+    <HashRouter>
+      <App />
+    </HashRouter>
   </StrictMode>
 );
 console.log("App component rendered!");

@@ -39,7 +39,9 @@ const isDev = !app.isPackaged;
 let isQuitting = false;
 
 // Icon path
-const iconPath = path.join(__dirname, "../public/dockev_logo_light_wbg.png");
+const iconPath = isDev
+	? path.join(__dirname, "../public/dockev_windows.ico")
+	: path.join(__dirname, "../dist/dockev_windows.ico");
 
 function createWindow() {
 	mainWindow = new BrowserWindow({
@@ -77,6 +79,18 @@ function createWindow() {
 		// In production, the dist folder should be at the root, so ../dist relative to electron/main.ts
 		mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
 	}
+
+	mainWindow.on("close", (event) => {
+		if (!isQuitting) {
+			event.preventDefault();
+			mainWindow?.hide();
+			return false;
+		}
+	});
+
+	mainWindow.on("closed", () => {
+		mainWindow = null;
+	});
 }
 
 // Widget Configuration
@@ -85,6 +99,9 @@ const WIDGET_CONFIG_FILE = path.join(app.getPath("userData"), "widget-config.jso
 interface WidgetConfig {
 	x?: number;
 	y?: number;
+	width?: number;
+	height?: number;
+	isVisible?: boolean;
 }
 
 function loadWidgetConfig(): WidgetConfig {
@@ -96,7 +113,7 @@ function loadWidgetConfig(): WidgetConfig {
 	} catch (error) {
 		console.error("Failed to load widget config:", error);
 	}
-	return {};
+	return { width: 350, height: 500, isVisible: false };
 }
 
 function saveWidgetConfig(config: WidgetConfig) {
@@ -109,26 +126,112 @@ function saveWidgetConfig(config: WidgetConfig) {
 
 let widgetWindow: BrowserWindow | null = null;
 let saveTimeout: NodeJS.Timeout | null = null;
+let tray: Tray | null = null;
+let cachedProjects: any[] = [];
 
-function createWidgetWindow() {
+function updateTray(projects: any[] = cachedProjects) {
+	cachedProjects = projects;
+	if (!tray) return;
+
+	const projectItems = projects.map((p) => ({
+		label: p.name,
+		click: () => launchIde(p.path, p.defaultIde || "vscode")
+	}));
+
+	const contextMenu = Menu.buildFromTemplate([
+		{
+			label: "Show Dockev",
+			click: () => {
+				if (mainWindow) {
+					if (mainWindow.isMinimized()) mainWindow.restore();
+					mainWindow.show();
+					mainWindow.focus();
+				} else {
+					createWindow();
+				}
+			}
+		},
+		{
+			label: "Toggle Widget",
+			click: () => {
+				if (widgetWindow) {
+					if (widgetWindow.isVisible()) {
+						widgetWindow.hide();
+					} else {
+						widgetWindow.show();
+					}
+				} else {
+					createWidgetWindow(true);
+				}
+			}
+		},
+		{ type: "separator" },
+		{
+			label: "Projects",
+			submenu:
+				projectItems.length > 0
+					? projectItems
+					: [{ label: "No Projects", enabled: false }]
+		},
+		{ type: "separator" },
+		{
+			label: "Quit",
+			click: () => {
+				isQuitting = true;
+				app.quit();
+			}
+		}
+	]);
+
+	tray.setContextMenu(contextMenu);
+}
+
+function createTray() {
+	const icon = nativeImage.createFromPath(iconPath);
+	tray = new Tray(icon.resize({ width: 16, height: 16 }));
+	tray.setToolTip("Dockev");
+	tray.on("click", () => {
+		if (mainWindow) {
+			if (mainWindow.isVisible()) {
+				mainWindow.hide();
+			} else {
+				mainWindow.show();
+			}
+		}
+	});
+	updateTray();
+}
+
+ipcMain.handle("projects:sync", (_event, projects) => {
+	updateTray(projects);
+});
+
+function createWidgetWindow(show: boolean = false) {
 	if (widgetWindow) {
-		if (widgetWindow.isMinimized()) widgetWindow.restore();
-		widgetWindow.show();
+		if (show) {
+			if (widgetWindow.isMinimized()) widgetWindow.restore();
+			widgetWindow.show();
+		}
 		return;
 	}
 
 	const config = loadWidgetConfig();
 
 	widgetWindow = new BrowserWindow({
-		width: 350,
-		height: 500,
+		width: config.width || 350,
+		height: config.height || 500,
+		minWidth: 300,
+		minHeight: 400,
 		x: config.x,
 		y: config.y,
 		frame: false,
 		transparent: true,
-		resizable: false,
+		resizable: true, // Allow resizing initially
 		skipTaskbar: true,
+		show: false, // Don't show by default
 		icon: iconPath,
+		vibrancy: "hud", // macOS glass effect
+		visualEffectState: "active", // macOS
 		webPreferences: {
 			preload: path.join(__dirname, "preload.js"),
 			contextIsolation: true,
@@ -141,21 +244,32 @@ function createWidgetWindow() {
 		const url = "http://localhost:5173/#/widget";
 		widgetWindow.loadURL(url);
 	} else {
-		widgetWindow.loadFile(path.join(__dirname, "./dist/index.html"), {
-			hash: "widget"
+		widgetWindow.loadFile(path.join(__dirname, "../dist/index.html"), {
+			hash: "/widget"
 		});
 	}
 
-	// Save position on move with debounce
-	widgetWindow.on("move", () => {
+	// Show if requested OR if it was visible last time
+	if (show || config.isVisible) {
+		widgetWindow.showInactive();
+	}
+
+	const saveState = () => {
 		if (saveTimeout) clearTimeout(saveTimeout);
 		saveTimeout = setTimeout(() => {
 			if (widgetWindow && !widgetWindow.isDestroyed()) {
 				const [x, y] = widgetWindow.getPosition();
-				saveWidgetConfig({ x, y });
+				const [width, height] = widgetWindow.getSize();
+				const isVisible = widgetWindow.isVisible();
+				saveWidgetConfig({ x, y, width, height, isVisible });
 			}
-		}, 500); // Debounce for 500ms
-	});
+		}, 500);
+	};
+
+	widgetWindow.on("move", saveState);
+	widgetWindow.on("resize", saveState);
+	widgetWindow.on("show", saveState);
+	widgetWindow.on("hide", saveState);
 
 	// Hide instead of close
 	widgetWindow.on("close", (event) => {
@@ -164,16 +278,17 @@ function createWidgetWindow() {
 			widgetWindow?.hide();
 		}
 	});
-
-	widgetWindow.on("blur", () => {
-		// Optional: hide on blur
-		// widgetWindow?.hide();
-	});
 }
+
+ipcMain.handle("widget:setPinned", (_event, isPinned: boolean) => {
+	if (widgetWindow && !widgetWindow.isDestroyed()) {
+		widgetWindow.setResizable(!isPinned);
+	}
+});
 
 ipcMain.handle("widget:toggle", () => {
 	if (!widgetWindow) {
-		createWidgetWindow();
+		createWidgetWindow(true);
 	} else {
 		if (widgetWindow.isVisible()) {
 			widgetWindow.hide();
@@ -672,6 +787,182 @@ ipcMain.handle(
 	}
 );
 
+// Helper function to launch IDE
+async function launchIde(projectPath: string, ide: string): Promise<boolean> {
+	return new Promise((resolve, reject) => {
+		// Normalize path (replace ~ with home directory)
+		let normalizedPath = projectPath;
+		if (projectPath.startsWith("~")) {
+			normalizedPath = path.join(homedir(), projectPath.slice(1));
+		}
+		normalizedPath = path.resolve(normalizedPath);
+
+		// Verify path exists
+		if (!existsSync(normalizedPath)) {
+			reject(new Error(`Path does not exist: ${normalizedPath}`));
+			return;
+		}
+
+		let command: string;
+		let args: string[] = [];
+		const isWindows = process.platform === "win32";
+
+		switch (ide) {
+			case "vscode":
+				if (isWindows) {
+					// On Windows, use code command directly (it handles .cmd internally)
+					command = "code";
+					args = [normalizedPath];
+				} else {
+					command = "code";
+					args = [normalizedPath];
+				}
+				break;
+			case "cursor":
+				if (isWindows) {
+					// On Windows, use cursor command directly
+					command = "cursor";
+					args = [normalizedPath];
+				} else {
+					command = "cursor";
+					args = [normalizedPath];
+				}
+				break;
+			case "webstorm":
+				if (isWindows) {
+					// WebStorm on Windows might be in Program Files
+					const webstormPaths = [
+						path.join(
+							process.env["ProgramFiles"] || "",
+							"JetBrains",
+							"WebStorm",
+							"bin",
+							"webstorm64.exe"
+						),
+						path.join(
+							process.env["ProgramFiles(x86)"] || "",
+							"JetBrains",
+							"WebStorm",
+							"bin",
+							"webstorm64.exe"
+						),
+						path.join(
+							process.env["LOCALAPPDATA"] || "",
+							"Programs",
+							"WebStorm",
+							"bin",
+							"webstorm64.exe"
+						)
+					];
+					const foundPath = webstormPaths.find((p) => existsSync(p));
+					if (foundPath) {
+						command = foundPath;
+						args = [normalizedPath];
+					} else {
+						command = "webstorm";
+						args = [normalizedPath];
+					}
+				} else {
+					command = "webstorm";
+					args = [normalizedPath];
+				}
+				break;
+			case "terminal":
+				if (isWindows) {
+					// Use start command to open PowerShell in the project directory
+					command = "powershell.exe";
+					args = [
+						"-NoExit",
+						"-Command",
+						`Set-Location -LiteralPath '${normalizedPath.replace(
+							/'/g,
+							"''"
+						)}'`
+					];
+				} else if (process.platform === "darwin") {
+					command = "open";
+					args = ["-a", "Terminal", normalizedPath];
+				} else {
+					command = "gnome-terminal";
+					args = ["--working-directory", normalizedPath];
+				}
+				break;
+			default:
+				// Try to use the ide string as a command directly (for custom IDEs)
+				// Custom IDE IDs start with "custom_" prefix, so we extract the command
+				if (ide.startsWith("custom_")) {
+					// Get command from custom IDE (stored in settings)
+					// For now, we'll try to use the ide ID as command
+					// In a full implementation, you'd load settings and map ID to command
+					command = ide.replace("custom_", "");
+					args = [normalizedPath];
+				} else {
+					// Fallback: try using ide as command directly
+					command = ide;
+					args = [normalizedPath];
+				}
+				break;
+		}
+
+		// For Windows, use shell: true to ensure commands work properly
+		const spawnOptions: {
+			detached: boolean;
+			stdio: "ignore" | "inherit";
+			shell: boolean;
+			cwd?: string;
+			env?: NodeJS.ProcessEnv;
+		} = {
+			detached: true,
+			stdio: "ignore",
+			shell: isWindows
+		};
+
+		// Set working directory for non-Windows
+		if (!isWindows) {
+			spawnOptions.cwd = normalizedPath;
+		}
+
+		// For terminal on Windows, we need to ensure proper execution
+		if (isWindows && ide === "terminal") {
+			spawnOptions.shell = true;
+		}
+
+		console.log(`Launching ${ide} with command: ${command}`, args);
+		console.log(`Path: ${normalizedPath}`);
+
+		const child = spawn(command, args, spawnOptions);
+
+		child.on("error", (error: NodeJS.ErrnoException) => {
+			console.error(`Error launching ${ide}:`, error);
+			console.error(`Command: ${command}`, args);
+			console.error(`Path: ${normalizedPath}`);
+			console.error(`Error code: ${error.code}`);
+			console.error(`Error message: ${error.message}`);
+
+			reject(
+				new Error(
+					`Failed to launch ${ide}.\n\nCommand: ${command}\nPath: ${normalizedPath}\n\nMake sure it's installed and available in PATH.\n\nError: ${error.message}`
+				)
+			);
+		});
+
+		// Give the process time to start
+		// On Windows, processes need more time, especially for IDEs
+		setTimeout(
+			() => {
+				try {
+					child.unref();
+					resolve(true);
+				} catch (err) {
+					console.warn("Error unrefing child process:", err);
+					resolve(true); // Still resolve as success
+				}
+			},
+			isWindows ? 1000 : 200
+		);
+	});
+}
+
 ipcMain.handle(
 	"launch:ide",
 	async (
@@ -679,178 +970,7 @@ ipcMain.handle(
 		projectPath: string,
 		ide: string
 	) => {
-		return new Promise((resolve, reject) => {
-			// Normalize path (replace ~ with home directory)
-			let normalizedPath = projectPath;
-			if (projectPath.startsWith("~")) {
-				normalizedPath = path.join(homedir(), projectPath.slice(1));
-			}
-			normalizedPath = path.resolve(normalizedPath);
-
-			// Verify path exists
-			if (!existsSync(normalizedPath)) {
-				reject(new Error(`Path does not exist: ${normalizedPath}`));
-				return;
-			}
-
-			let command: string;
-			let args: string[] = [];
-			const isWindows = process.platform === "win32";
-
-			switch (ide) {
-				case "vscode":
-					if (isWindows) {
-						// On Windows, use code command directly (it handles .cmd internally)
-						command = "code";
-						args = [normalizedPath];
-					} else {
-						command = "code";
-						args = [normalizedPath];
-					}
-					break;
-				case "cursor":
-					if (isWindows) {
-						// On Windows, use cursor command directly
-						command = "cursor";
-						args = [normalizedPath];
-					} else {
-						command = "cursor";
-						args = [normalizedPath];
-					}
-					break;
-				case "webstorm":
-					if (isWindows) {
-						// WebStorm on Windows might be in Program Files
-						const webstormPaths = [
-							path.join(
-								process.env["ProgramFiles"] || "",
-								"JetBrains",
-								"WebStorm",
-								"bin",
-								"webstorm64.exe"
-							),
-							path.join(
-								process.env["ProgramFiles(x86)"] || "",
-								"JetBrains",
-								"WebStorm",
-								"bin",
-								"webstorm64.exe"
-							),
-							path.join(
-								process.env["LOCALAPPDATA"] || "",
-								"Programs",
-								"WebStorm",
-								"bin",
-								"webstorm64.exe"
-							)
-						];
-						const foundPath = webstormPaths.find((p) => existsSync(p));
-						if (foundPath) {
-							command = foundPath;
-							args = [normalizedPath];
-						} else {
-							command = "webstorm";
-							args = [normalizedPath];
-						}
-					} else {
-						command = "webstorm";
-						args = [normalizedPath];
-					}
-					break;
-				case "terminal":
-					if (isWindows) {
-						// Use start command to open PowerShell in the project directory
-						command = "powershell.exe";
-						args = [
-							"-NoExit",
-							"-Command",
-							`Set-Location -LiteralPath '${normalizedPath.replace(
-								/'/g,
-								"''"
-							)}'`
-						];
-					} else if (process.platform === "darwin") {
-						command = "open";
-						args = ["-a", "Terminal", normalizedPath];
-					} else {
-						command = "gnome-terminal";
-						args = ["--working-directory", normalizedPath];
-					}
-					break;
-				default:
-					// Try to use the ide string as a command directly (for custom IDEs)
-					// Custom IDE IDs start with "custom_" prefix, so we extract the command
-					if (ide.startsWith("custom_")) {
-						// Get command from custom IDE (stored in settings)
-						// For now, we'll try to use the ide ID as command
-						// In a full implementation, you'd load settings and map ID to command
-						command = ide.replace("custom_", "");
-						args = [normalizedPath];
-					} else {
-						// Fallback: try using ide as command directly
-						command = ide;
-						args = [normalizedPath];
-					}
-					break;
-			}
-
-			// For Windows, use shell: true to ensure commands work properly
-			const spawnOptions: {
-				detached: boolean;
-				stdio: "ignore" | "inherit";
-				shell: boolean;
-				cwd?: string;
-				env?: NodeJS.ProcessEnv;
-			} = {
-				detached: true,
-				stdio: "ignore",
-				shell: isWindows
-			};
-
-			// Set working directory for non-Windows
-			if (!isWindows) {
-				spawnOptions.cwd = normalizedPath;
-			}
-
-			// For terminal on Windows, we need to ensure proper execution
-			if (isWindows && ide === "terminal") {
-				spawnOptions.shell = true;
-			}
-
-			console.log(`Launching ${ide} with command: ${command}`, args);
-			console.log(`Path: ${normalizedPath}`);
-
-			const child = spawn(command, args, spawnOptions);
-
-			child.on("error", (error: NodeJS.ErrnoException) => {
-				console.error(`Error launching ${ide}:`, error);
-				console.error(`Command: ${command}`, args);
-				console.error(`Path: ${normalizedPath}`);
-				console.error(`Error code: ${error.code}`);
-				console.error(`Error message: ${error.message}`);
-
-				reject(
-					new Error(
-						`Failed to launch ${ide}.\n\nCommand: ${command}\nPath: ${normalizedPath}\n\nMake sure it's installed and available in PATH.\n\nError: ${error.message}`
-					)
-				);
-			});
-
-			// Give the process time to start
-			// On Windows, processes need more time, especially for IDEs
-			setTimeout(
-				() => {
-					try {
-						child.unref();
-						resolve(true);
-					} catch (err) {
-						console.warn("Error unrefing child process:", err);
-						resolve(true); // Still resolve as success
-					}
-				},
-				isWindows ? 1000 : 200
-			);
-		});
+		return launchIde(projectPath, ide);
 	}
 );
 
@@ -1850,38 +1970,55 @@ ipcMain.handle(
 );
 
 
-app.whenReady().then(() => {
-	createWindow();
+const gotTheLock = app.requestSingleInstanceLock();
 
-	globalShortcut.register('Alt+D', () => {
-		if (!widgetWindow) {
-			createWidgetWindow();
-		} else {
-			if (widgetWindow.isVisible()) {
-				widgetWindow.hide();
+if (!gotTheLock) {
+	app.quit();
+} else {
+	app.on('second-instance', (event, commandLine, workingDirectory) => {
+		// Someone tried to run a second instance, we should focus our window.
+		if (mainWindow) {
+			if (mainWindow.isMinimized()) mainWindow.restore();
+			mainWindow.show();
+			mainWindow.focus();
+		}
+	});
+
+	app.whenReady().then(() => {
+		createWindow();
+		createTray();
+		createWidgetWindow();
+
+		globalShortcut.register('Alt+D', () => {
+			if (!widgetWindow) {
+				createWidgetWindow(true);
 			} else {
-				widgetWindow.show();
+				if (widgetWindow.isVisible()) {
+					widgetWindow.hide();
+				} else {
+					widgetWindow.show();
+				}
 			}
+		});
+
+		app.on('activate', () => {
+			if (BrowserWindow.getAllWindows().length === 0) {
+				createWindow();
+			}
+		});
+	});
+
+	app.on('window-all-closed', () => {
+		if (process.platform !== 'darwin') {
+			app.quit();
 		}
 	});
 
-	app.on('activate', () => {
-		if (BrowserWindow.getAllWindows().length === 0) {
-			createWindow();
-		}
+	app.on('will-quit', () => {
+		globalShortcut.unregisterAll();
 	});
-});
 
-app.on('window-all-closed', () => {
-	if (process.platform !== 'darwin') {
-		app.quit();
-	}
-});
-
-app.on('will-quit', () => {
-	globalShortcut.unregisterAll();
-});
-
-app.on('before-quit', () => {
-	isQuitting = true;
-});
+	app.on('before-quit', () => {
+		isQuitting = true;
+	});
+}

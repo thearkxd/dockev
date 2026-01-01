@@ -7,7 +7,8 @@ contextBridge.exposeInMainWorld("dockevWindow", {
 	widget: {
 		toggle: () => ipcRenderer.invoke("widget:toggle"),
 		resize: (width, height) => ipcRenderer.invoke("widget:resize", width, height),
-		openDashboard: () => ipcRenderer.invoke("widget:openDashboard")
+		openDashboard: () => ipcRenderer.invoke("widget:openDashboard"),
+		setPinned: (isPinned) => ipcRenderer.invoke("widget:setPinned", isPinned)
 	},
 	launch: {
 		ide: (projectPath, ide) =>
@@ -84,5 +85,6 @@ contextBridge.exposeInMainWorld("dockevProject", {
 	},
 	removeMoveProgressListener: () => {
 		ipcRenderer.removeAllListeners("project:moveFolder:progress");
-	}
+	},
+	syncProjects: (projects) => ipcRenderer.invoke("projects:sync", projects)
 });

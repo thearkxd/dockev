@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+## [1.0.0] - 2026-01-01
+
+### Added
+
+- **Production Ready**: Full build configuration for Windows, macOS, and Linux
+- **Single Instance Lock**: Stables app behavior by preventing multiple instances
+- **Minimize to Tray**: Keeps the app accessible via system tray instead of fully quitting
+- **Auto-Updater Support**: Basic configuration for future updates
+- **Performance Improvements**: Optimized widget loading and state persistence
+
 ## [0.2.0]
 
 ### Added

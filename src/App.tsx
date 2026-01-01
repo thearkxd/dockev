@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage";
@@ -14,6 +14,8 @@ import { settingsStorage } from "./utils/settingsStorage";
 
 export default function App() {
 	console.log("App component rendering...");
+	const location = useLocation();
+	const isWidget = location.pathname === "/widget";
 	const [projects, setProjects] = useState<Project[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isSpotlightOpen, setIsSpotlightOpen] = useState(false);
@@ -135,6 +137,10 @@ export default function App() {
 	useEffect(() => {
 		if (!isLoading) {
 			storage.saveProjects(projects);
+			// Sync with backend for Tray menu
+			if (window.dockevProject?.syncProjects) {
+				window.dockevProject.syncProjects(projects);
+			}
 		}
 	}, [projects, isLoading]);
 
@@ -238,67 +244,91 @@ export default function App() {
 	}
 
 	return (
-		<HashRouter>
-			<div className="bg-background-dark text-text-primary font-display antialiased overflow-hidden selection:bg-primary/20 selection:text-primary">
-				<PageTransition>
-					<Routes>
-						<Route
-							path="/"
-							element={
-								<ProjectsPage
-									projects={projects}
-									onAddProject={handleAddProject}
-									onUpdateProject={handleUpdateProject}
-									onDeleteProject={handleDeleteProject}
-									onOpenIDE={handleOpenIDE}
-								/>
-							}
-						/>
-						<Route
-							path="/project/:id"
-							element={
-								<ProjectDetailPage
-									projects={projects}
-									onUpdateProject={handleUpdateProject}
-									onDeleteProject={handleDeleteProject}
-									onOpenIDE={handleOpenIDE}
-								/>
-							}
-						/>
-						<Route path="/settings" element={<SettingsPage />} />
-						<Route path="/widget" element={<WidgetPage />} />
-						<Route path="*" element={<Navigate to="/" replace />} />
-					</Routes>
-				</PageTransition>
-				<Spotlight
-					isOpen={isSpotlightOpen}
-					onClose={() => setIsSpotlightOpen(false)}
-					projects={projects}
-				/>
-				<Toaster
-					position="top-right"
-					toastOptions={{
-						duration: 3000,
-						style: {
-							background: "#1a1a1a",
-							color: "#fff",
-							border: "1px solid rgba(255, 255, 255, 0.1)"
-						},
-						success: {
-							iconTheme: {
-								primary: "#10b981",
-								secondary: "#fff"
-							}
-						},
-						error: {
-							iconTheme: {
-								primary: "#ef4444",
-								secondary: "#fff"
-							}
+		<div
+			className={`text-text-primary font-display antialiased overflow-hidden selection:bg-primary/20 selection:text-primary ${isWidget ? "bg-transparent h-screen w-screen" : "bg-background-dark"
+				}`}
+		>
+			<PageTransition>
+				<Routes>
+					<Route
+						path="/"
+						element={
+							<ProjectsPage
+								projects={projects}
+								onAddProject={handleAddProject}
+								onUpdateProject={handleUpdateProject}
+								onDeleteProject={handleDeleteProject}
+								onOpenIDE={handleOpenIDE}
+							/>
 						}
-					}}
-				/>
-			</div>
-		</HashRouter>
+					/>
+					<Route
+						path="/project/:id"
+						element={
+							<ProjectDetailPage
+								projects={projects}
+								onUpdateProject={handleUpdateProject}
+								onDeleteProject={handleDeleteProject}
+								onOpenIDE={handleOpenIDE}
+							/>
+						}
+					/>
+					<Route path="/settings" element={<SettingsPage />} />
+					<Route path="/widget" element={<WidgetPage />} />
+					<Route path="*" element={<Navigate to="/" replace />} />
+				</Routes>
+			</PageTransition>
+			<Spotlight
+				isOpen={isSpotlightOpen}
+				onClose={() => setIsSpotlightOpen(false)}
+				projects={projects}
+			/>
+			<Toaster
+				position="top-right"
+				toastOptions={{
+					duration: 3000,
+					style: {
+						background: "#1a1a1a",
+						color: "#fff",
+						border: "1px solid rgba(255, 255, 255, 0.1)"
+					},
+					success: {
+						iconTheme: {
+							primary: "#10b981",
+							secondary: "#fff"
+						}
+					},
+					error: {
+						iconTheme: {
+							primary: "#ef4444",
+							secondary: "#fff"
+						}
+					}
+				}}
+			/>
+			<Toaster
+				position="top-right"
+				toastOptions={{
+					duration: 3000,
+					style: {
+						background: "#1a1a1a",
+						color: "#fff",
+						border: "1px solid rgba(255, 255, 255, 0.1)"
+					},
+					success: {
+						iconTheme: {
+							primary: "#10b981",
+							secondary: "#fff"
+						}
+					},
+					error: {
+						iconTheme: {
+							primary: "#ef4444",
+							secondary: "#fff"
+						}
+					}
+				}}
+			/>
+		</div>
 	);
 }

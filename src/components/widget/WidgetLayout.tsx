@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
-import { X, Search, LayoutGrid, Pin } from "lucide-react";
+import { Search, LayoutGrid, Pin } from "lucide-react";
 
 interface WidgetLayoutProps {
     children: ReactNode;
@@ -18,20 +18,14 @@ export function WidgetLayout({
     const [isSearchActive, setIsSearchActive] = useState(false);
     const [isPinned, setIsPinned] = useState(false);
 
-    const handleMinimize = () => {
-        window.dockevWindow?.minimize();
-    };
-
-    const handleClose = () => {
-        if (window.dockevWindow?.widget?.toggle) {
-            window.dockevWindow.widget.toggle();
-        } else {
-            window.dockevWindow?.close();
-        }
+    const handlePinToggle = () => {
+        const newPinnedState = !isPinned;
+        setIsPinned(newPinnedState);
+        window.dockevWindow?.widget?.setPinned?.(newPinnedState);
     };
 
     return (
-        <div className="w-full h-screen bg-background/95 backdrop-blur-xl border border-white/10 overflow-hidden flex flex-col rounded-xl">
+        <div className="w-full h-screen bg-black/40 backdrop-blur-2xl border border-white/5 overflow-hidden flex flex-col rounded-xl shadow-2xl">
             {/* Draggable Header */}
             <div className={`h-10 bg-white/5 border-b border-white/5 flex items-center justify-between px-3 select-none ${isPinned ? "" : "drag-region"}`}>
 
@@ -74,31 +68,18 @@ export function WidgetLayout({
                     </button>
 
                     <button
-                        onClick={() => setIsPinned(!isPinned)}
+                        onClick={handlePinToggle}
                         className={`p-1.5 rounded-md transition-colors ${isPinned
-                                ? "bg-white/10 text-primary"
-                                : "hover:bg-white/10 text-text-secondary hover:text-white"
+                            ? "bg-white/10 text-primary"
+                            : "hover:bg-white/10 text-text-secondary hover:text-white"
                             }`}
-                        title={isPinned ? "Unpin Widget" : "Pin Widget"}
+                        title={isPinned ? "Unpin (Unlock Resize)" : "Pin (Lock Resize)"}
                     >
                         <Pin size={14} className={isPinned ? "fill-current" : ""} />
                     </button>
-
-                    <div className="w-px h-4 bg-white/10 mx-1" />
-                    <button
-                        onClick={handleMinimize}
-                        className="p-1.5 hover:bg-white/10 rounded-md transition-colors text-text-secondary hover:text-white"
-                        title="Minimize"
-                    >
-                        <div className="w-3 h-0.5 bg-current rounded-full" />
-                    </button>
-                    <button
-                        onClick={handleClose}
-                        className="p-1.5 hover:bg-white/10 rounded-md transition-colors text-text-secondary hover:text-white"
-                        title="Close"
-                    >
-                        <X size={14} />
-                    </button>
+                    {isPinned && (
+                        <span className="text-[10px] text-text-secondary ml-1 bg-white/5 px-1.5 py-0.5 rounded">Locked</span>
+                    )}
                 </div>
             </div>
 

@@ -1,4 +1,4 @@
-import { Monitor, Save, AlertCircle, Check, X, LayoutGrid } from "lucide-react";
+import { LayoutGrid } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";

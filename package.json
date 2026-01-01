@@ -1,6 +1,6 @@
 {
 	"name": "dockev",
-	"version": "0.2.0",
+	"version": "1.0.0",
 	"description": "Your personal command center for all development projects",
 	"author": "thearkxd",
 	"license": "MIT",
@@ -40,8 +40,37 @@
 		"test:coverage": "vitest --coverage",
 		"test:run": "vitest run"
 	},
+	"build": {
+		"appId": "com.thearkxd.dockev",
+		"productName": "Dockev",
+		"directories": {
+			"output": "release"
+		},
+		"files": [
+			"dist/**/*",
+			"electron/**/*",
+			"package.json"
+		],
+		"win": {
+			"target": "nsis",
+			"icon": "public/dockev_windows.ico"
+		},
+		"nsis": {
+			"oneClick": false,
+			"allowToChangeInstallationDirectory": true,
+			"createDesktopShortcut": true,
+			"createStartMenuShortcut": true
+		},
+		"mac": {
+			"target": "dmg",
+			"icon": "public/dockev_logo_light_wbg.png"
+		},
+		"linux": {
+			"target": "AppImage",
+			"icon": "public/dockev_logo_light_wbg.png"
+		}
+	},
 	"dependencies": {
-		"electron": "^39.2.7",
 		"lucide-react": "^0.562.0",
 		"react": "^19.2.0",
 		"react-dom": "^19.2.0",
@@ -49,6 +78,7 @@
 		"react-router-dom": "^7.11.0"
 	},
 	"devDependencies": {
+		"electron": "^39.2.7",
 		"@eslint/js": "^9.39.1",
 		"@iconify/react": "^6.0.2",
 		"@testing-library/jest-dom": "^6.6.3",
@@ -61,6 +91,7 @@
 		"@vitest/ui": "^2.1.8",
 		"autoprefixer": "^10.4.23",
 		"concurrently": "^9.1.2",
+		"electron-builder": "^26.0.12",
 		"eslint": "^9.39.1",
 		"eslint-plugin-react-hooks": "^7.0.1",
 		"eslint-plugin-react-refresh": "^0.4.24",

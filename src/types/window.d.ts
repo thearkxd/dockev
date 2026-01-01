@@ -11,6 +11,7 @@ declare global {
         toggle: () => void;
         resize: (width: number, height: number) => void;
         openDashboard: () => void;
+        setPinned: (isPinned: boolean) => void;
       };
       launch?: {
         ide: (projectPath: string, ide: string) => Promise<boolean>;
@@ -129,6 +130,7 @@ declare global {
         }) => void
       ) => void;
       removeMoveProgressListener: () => void;
+      syncProjects: (projects: any[]) => Promise<void>;
     };
   }
 }

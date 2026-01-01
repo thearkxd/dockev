@@ -4,7 +4,7 @@
 
 Dockev is a beautiful, local-first desktop application that helps developers organize, discover, and instantly launch their projects. Say goodbye to hunting through folders and hello to a streamlined workflow! ✨
 
-![Dockev](https://img.shields.io/badge/version-0.1.0-blue)
+![Dockev](https://img.shields.io/badge/version-1.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
 
@@ -52,6 +52,11 @@ Ever found yourself:
 - **Quick Actions**: 
   - Open projects in Terminal or File Explorer with one click.
   - Pin the widget to keep it visible while you work.
+
+### 🛠️ System Overview
+- **🔔 System Tray**: Application stays running in the background for instant access
+- **🔒 Single Instance**: Smart handling prevents duplicate processes
+- **⚡ Zero Distraction**: Minimized to tray by default when closed
 
 ---
 

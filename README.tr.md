@@ -4,7 +4,7 @@
 
 Dockev, geliştiricilerin projelerini organize etmesine, keşfetmesine ve anında başlatmasına yardımcı olan güzel, yerel-öncelikli bir masaüstü uygulamasıdır. Klasörler arasında arama yapmaya veda edin, akıcı bir iş akışına merhaba deyin! ✨
 
-![Dockev](https://img.shields.io/badge/version-0.0.0-blue)
+![Dockev](https://img.shields.io/badge/version-1.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
 
@@ -51,6 +51,11 @@ Hiç şunları yaşadınız mı:
 - **Hızlı İşlemler**: 
   - Projeleri tek tıkla Terminal veya Dosya Gezgini'nde açın.
   - Çalışırken görünür kalması için pencereyi sabitleyin.
+
+### 🛠️ Sistem Entegrasyonu
+- **🔔 Sistem Tepsisi**: Uygulama arka planda çalışmaya devam eder, anında erişim sağlar
+- **🔒 Tek Örnek**: Çift işlem oluşumunu akıllıca önler
+- **⚡ Odak Modu**: Kapatıldığında varsayılan olarak tepsiye küçülür
 
 ---
 
