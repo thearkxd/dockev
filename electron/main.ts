@@ -127,8 +127,10 @@ function saveWidgetConfig(config: WidgetConfig) {
 let widgetWindow: BrowserWindow | null = null;
 let saveTimeout: NodeJS.Timeout | null = null;
 let tray: Tray | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let cachedProjects: any[] = [];
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function updateTray(projects: any[] = cachedProjects) {
 	cachedProjects = projects;
 	if (!tray) return;
@@ -1975,7 +1977,7 @@ const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
 	app.quit();
 } else {
-	app.on('second-instance', (event, commandLine, workingDirectory) => {
+	app.on('second-instance', () => {
 		// Someone tried to run a second instance, we should focus our window.
 		if (mainWindow) {
 			if (mainWindow.isMinimized()) mainWindow.restore();

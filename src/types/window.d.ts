@@ -130,6 +130,7 @@ declare global {
         }) => void
       ) => void;
       removeMoveProgressListener: () => void;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       syncProjects: (projects: any[]) => Promise<void>;
     };
   }

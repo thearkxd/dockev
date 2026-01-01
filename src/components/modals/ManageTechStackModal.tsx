@@ -54,20 +54,7 @@ export function ManageTechStackModal({
   onClose,
   onSave,
 }: ManageTechStackModalProps) {
-  // Get all unique tech stacks from modules and project tags
-  const getAllTechStacks = (): string[] => {
-    const techSet = new Set<string>();
 
-    // Add from modules
-    project.modules?.forEach((module) => {
-      module.techStack.forEach((tech) => techSet.add(tech));
-    });
-
-    // Add from project tags
-    project.tags.forEach((tag) => techSet.add(tag));
-
-    return Array.from(techSet);
-  };
 
   const [techStack, setTechStack] = useState<TechStackItem[]>([]);
   const [newTechName, setNewTechName] = useState("");
@@ -77,6 +64,21 @@ export function ManageTechStackModal({
 
   // Initialize tech stack items with versions from config
   useEffect(() => {
+    // Get all unique tech stacks from modules and project tags
+    const getAllTechStacks = (): string[] => {
+      const techSet = new Set<string>();
+
+      // Add from modules
+      project.modules?.forEach((module) => {
+        module.techStack.forEach((tech) => techSet.add(tech));
+      });
+
+      // Add from project tags
+      project.tags.forEach((tag) => techSet.add(tag));
+
+      return Array.from(techSet);
+    };
+
     if (isOpen) {
       const techNames = getAllTechStacks();
       const versions = project.config?.techStackVersions || {};
@@ -186,9 +188,8 @@ export function ManageTechStackModal({
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300 ${
-          isAnimating ? "opacity-100" : "opacity-0"
-        }`}
+        className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300 ${isAnimating ? "opacity-100" : "opacity-0"
+          }`}
         onClick={onClose}
         aria-hidden="true"
       />
@@ -196,11 +197,10 @@ export function ManageTechStackModal({
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <div
-          className={`relative w-full max-w-4xl flex flex-col max-h-[90vh] rounded-2xl bg-surface-dark shadow-2xl border border-border-dark/50 pointer-events-auto transition-all duration-300 ${
-            isAnimating
-              ? "opacity-100 scale-100 translate-y-0"
-              : "opacity-0 scale-95 translate-y-4"
-          }`}
+          className={`relative w-full max-w-4xl flex flex-col max-h-[90vh] rounded-2xl bg-surface-dark shadow-2xl border border-border-dark/50 pointer-events-auto transition-all duration-300 ${isAnimating
+            ? "opacity-100 scale-100 translate-y-0"
+            : "opacity-0 scale-95 translate-y-4"
+            }`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}

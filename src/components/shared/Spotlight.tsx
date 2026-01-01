@@ -19,7 +19,7 @@ export function Spotlight({ isOpen, onClose, projects }: SpotlightProps) {
   const filteredProjects = projects.filter((project) => {
     if (!query.trim()) return false;
     const searchTerm = query.toLowerCase();
-    
+
     // Basic project fields
     const matchesBasic =
       project.name.toLowerCase().includes(searchTerm) ||
@@ -45,7 +45,7 @@ export function Spotlight({ isOpen, onClose, projects }: SpotlightProps) {
     // Project details search (description, author, etc.)
     // Note: projectDetails are loaded dynamically, so we can't search them here
     // But we can search tags which might include tech stack info
-    
+
     return matchesBasic || matchesModules || matchesTechStack;
   });
 
@@ -86,6 +86,7 @@ export function Spotlight({ isOpen, onClose, projects }: SpotlightProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, filteredProjects, selectedIndex, onClose]);
 
   // Scroll selected item into view
@@ -192,9 +193,8 @@ export function Spotlight({ isOpen, onClose, projects }: SpotlightProps) {
                   <button
                     key={project.id}
                     onClick={() => handleSelectProject(project)}
-                    className={`w-full flex items-center gap-4 px-6 py-3 hover:bg-white/5 transition-colors ${
-                      index === selectedIndex ? "bg-white/5" : ""
-                    }`}
+                    className={`w-full flex items-center gap-4 px-6 py-3 hover:bg-white/5 transition-colors ${index === selectedIndex ? "bg-white/5" : ""
+                      }`}
                   >
                     <div className="flex items-center justify-center size-10 rounded-lg bg-primary/10 text-primary border border-primary/20 flex-shrink-0">
                       <span className="material-symbols-outlined text-[20px]">
